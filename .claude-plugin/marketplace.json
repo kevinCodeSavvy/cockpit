@@ -1,7 +1,7 @@
 {
   "name": "cockpit",
   "description": "A cockpit for Claude Code: Deck, next-step suggestions and Jev model routing, installed together",
-  "owner": { "name": "Kevin Fong", "url": "https://github.com/kevinCodeSavvy" },
+  "owner": { "name": "kevinCodeSavvy", "url": "https://github.com/kevinCodeSavvy" },
   "plugins": [
     { "name": "cockpit", "source": "./plugins/cockpit", "description": "Installs everything below in one step" },
     { "name": "deck", "source": "./plugins/deck", "description": "The panel above the prompt: context, 5h/7d limits, spend, cache timer, model route" },

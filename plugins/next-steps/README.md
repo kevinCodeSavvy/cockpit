@@ -40,7 +40,7 @@ The desktop app draws no buttons, so the suggestions appear as notice rows (`/ne
 
 ## Modifications
 
-Based on `next-steps` 1.0.8 by Thariq Shihipar, from [anthropics/claude-plugins-community](https://github.com/anthropics/claude-plugins-community) (Apache-2.0, see `LICENSE` and `NOTICE`). Changed by Kevin Fong in 1.0.9:
+Based on `next-steps` 1.0.8 by Thariq Shihipar, from [anthropics/claude-plugins-community](https://github.com/anthropics/claude-plugins-community) (Apache-2.0, see `LICENSE` and `NOTICE`). Changed by kevinCodeSavvy in 1.0.9:
 
 - The suggestions (and the "next steps…" loading line) are drawn in their own rounded, bordered panel **above** whatever else sits in the band above the prompt, such as Deck. Originally they were appended below it.
 

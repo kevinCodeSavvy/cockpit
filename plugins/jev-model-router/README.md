@@ -255,4 +255,4 @@ A mod runs without `node_modules`, so neither `@typesafe-ai/sdk` nor the AI SDK 
 
 ## Credits
 
-Started from the `jev-model-router` template in [davila7/claude-code-templates](https://github.com/davila7/claude-code-templates) by Daniel (San) Ávila, used under its MIT license (see `LICENSE`, which keeps the original copyright notice). The unsure floor, Opus shadow log, `/jev-shadow` and `/jev-dashboard` commands, and guarded auto-tune were added on top by Kevin Fong.
+Started from the `jev-model-router` template in [davila7/claude-code-templates](https://github.com/davila7/claude-code-templates) by Daniel (San) Ávila, used under its MIT license (see `LICENSE`, which keeps the original copyright notice). The unsure floor, Opus shadow log, `/jev-shadow` and `/jev-dashboard` commands, and guarded auto-tune were added on top by kevinCodeSavvy.

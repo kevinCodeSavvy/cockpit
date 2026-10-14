@@ -211,7 +211,7 @@ The banner, the demos, the styles gallery and the social card are generated from
 
 ## Modifications
 
-This copy is based on [nvr0x5/claude-deck](https://github.com/nvr0x5/claude-deck) 0.4.11 and was changed by Kevin Fong in 0.4.12 (see [CHANGELOG.md](CHANGELOG.md)):
+This copy is based on [nvr0x5/claude-deck](https://github.com/nvr0x5/claude-deck) 0.4.11 and was changed by kevinCodeSavvy in 0.4.12 (see [CHANGELOG.md](CHANGELOG.md)):
 
 - **Opens expanded in every new session.** The original reopens however the last session left it. New `/deck always on|off` (default on) controls this.
 - **New Spend row.** This session's cost so far, plus today's total when `/deck cost on`. Toggle with `/deck spend on|off`.
