@@ -6,9 +6,9 @@ A panel above the Claude Code prompt that shows what is going on, plus suggested
 - **Next steps**: up to three suggested next prompts in a panel of their own above Deck. Press 1, 2 or 3 to draft one, 0 to dismiss.
 - **Jev model router**: picks the model and reasoning effort for each task using [TypeSafe's Jev](https://typesafe.ai), and Deck shows each decision live.
 
-![The cockpit panel in Claude Code Desktop: model route, context, 5h and 7d limits, session spend and the prompt-cache timer](docs/panel.png)
+![The cockpit panel in Claude Code Desktop: next-step suggestions in their own panel above Deck, which shows the Jev model route, context, 5-hour and 7-day limits, session spend and the prompt-cache timer](docs/panel.png)
 
-*Deck in Claude Code Desktop: the Jev model route, context, 5-hour and 7-day limits, this session's spend, and the prompt-cache timer with the cost of a cold re-write. (Next-step suggestions appear in their own panel above this one after each reply.)*
+*The cockpit in Claude Code Desktop. Top: three suggested next prompts in their own panel (press 1, 2 or 3 to draft one, 0 to dismiss). Below it, Deck: the Jev model route, context, 5-hour and 7-day limits, this session's spend, and the prompt-cache timer with the cost of a cold re-write. (Composite of two screenshots from the same setup.)*
 
 Works in Claude Code Desktop and the terminal. Needs Claude Code 2.1.287 or later.
 
