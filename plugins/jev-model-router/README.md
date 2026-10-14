@@ -102,7 +102,7 @@ to load. Check them in this order:
    project is trusted: it is repository content, so an untrusted folder's
    `.claude/` is not read at all, and `claude -p` never asks. Open `claude`
    interactively in the folder and accept the trust prompt, or name the
-   plugin explicitly with `--plugin-dir` (see Install). `claude --debug`
+   plugin explicitly with `--plugin-dir` (see Setup). `claude --debug`
    settles it: a loaded module prints
    `hooks module jev-model-router@skills-dir loaded (worker, …); events: prompt.submit,turn.step,agent.spawn`
    (`@inline` when loaded with `--plugin-dir`); `Found N plugins` without it
@@ -216,67 +216,30 @@ wrong key every option stays at its default, and the `ready on` line reports
 
 ## Setup
 
-Install this version, with its unsure floor, shadow log, auto-tune and dashboard, from its repository.
+This copy ships in the [cockpit](../../README.md) marketplace together with Deck, which draws the router's decisions. From Claude Code:
 
-1. Clone it (the repository is private, so git needs access to it):
+```
+/plugin marketplace add kevinCodeSavvy/cockpit
+/plugin install jev-model-router@cockpit
+```
 
-   ```sh
-   git clone https://github.com/kevinCodeSavvy/jev-model-router.git ~/claude-mods/jev-model-router
-   ```
+Or install everything at once with `/plugin install cockpit@cockpit`.
 
-2. Add the folder as a marketplace and install from it:
-
-   ```sh
-   claude plugin marketplace add ~/claude-mods/jev-model-router
-   claude plugin install jev-model-router@jev-model-router
-   ```
-
-   With the repository's access in place, one line does both:
-   `/plugin install jev-model-router --marketplace kevinCodeSavvy/jev-model-router`
-
-3. Set the TypeSafe API key without printing it. Run this in your own terminal; the prompt hides what you paste:
+1. Set the TypeSafe API key without printing it. Run this in your own terminal; the prompt hides what you paste:
 
    ```sh
    printf 'TypeSafe API key (hidden): '; read -rs K; echo
-   printf '{"typesafeApiKey":"%s"}' "$K" | claude plugin configure jev-model-router@jev-model-router --values-stdin
+   printf '{"typesafeApiKey":"%s"}' "$K" | claude plugin configure jev-model-router@cockpit --values-stdin
    unset K
    ```
 
    The key is marked sensitive, so Claude Code keeps it out of `settings.json`. Never paste it into a chat or commit it. Without a key the mod falls back to the built-in classifier and no prompt leaves the machine; with one, the text of each prompt goes to `api.typesafe.ai`, so check that is acceptable before using it on work projects.
 
-4. Optional: other options go in the same way, as one JSON object of single-line strings, for example `{"routeMainModel":"true"}`. `claude plugin configure jev-model-router@jev-model-router` lists every option and whether it is set.
+2. Optional: other options go in the same way, as one JSON object of single-line strings, for example `{"routeMainModel":"true"}`. `claude plugin configure jev-model-router@cockpit` lists every option and whether it is set.
 
-5. Quit and reopen Claude Code, start a new session, and look for `[jev-model-router] ready on typesafe` in the log. `/jev-shadow` and `/jev-dashboard` start empty and fill as you work.
+3. Quit and reopen Claude Code, start a new session, and look for `[jev-model-router] ready on typesafe` in the log. `/jev-shadow` and `/jev-dashboard` start empty and fill as you work.
 
-To update later: `git pull` in the clone, then `claude plugin update jev-model-router@jev-model-router`, then restart.
-
-## Install
-
-> This section installs the original template by Daniel (San) Ávila, not this version. For this version use [Setup](#setup) above.
-
-```sh
-npx claude-code-templates@latest --mod productivity/jev-model-router
-claude
-```
-
-`--mod` writes the plugin to `.claude/skills/jev-model-router/` in the project,
-and Claude Code auto-loads it as `jev-model-router@skills-dir` **in a trusted
-project**: a folder's `.claude/` is repository content and is not read until
-you accept the trust prompt on the first interactive `claude` there (`-p`
-never asks, so a headless run in a fresh folder never sees it). The options
-then go under the `"jev-model-router@skills-dir"` key in `pluginConfigs` (see
-Options).
-
-For one session with hot reload, or in a folder you do not want to trust,
-name it on the command line instead — it loads as `jev-model-router@inline`
-and reads options from the `"jev-model-router"` key:
-
-```sh
-claude --plugin-dir .claude/skills/jev-model-router
-```
-
-Either way, `claude plugin validate .claude/skills/jev-model-router` prints
-every event it hooks and every `$` call it makes.
+To update later: `/plugin update jev-model-router@cockpit`, then restart.
 
 ## Tests
 
