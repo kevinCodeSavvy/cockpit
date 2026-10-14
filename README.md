@@ -74,6 +74,9 @@ printf '{"routeMainModel":"true"}' | claude plugin configure jev-model-router@co
 | Command | What it does |
 |---|---|
 | `/deck` | Collapse or expand Deck |
+| `/deck style` | Pick the bar style with live previews; `/deck style <name>` sets it directly: `pixel`, `segments`, `line`, `solid`, `dots` or `spark`. Desktop and terminal each keep their own choice |
+| `/deck collapsed chips\|text\|rings` | How Deck looks when collapsed: chips with mini bars, one plain line, or limit rings |
+| `/deck size compact\|roomy` | Row spacing on Desktop (compact is the default) |
 | `/deck always on\|off` | Open expanded in every new session (default on) |
 | `/deck cache 1h\|5m` | Prompt-cache lifetime for the Cache row (1h subscription, 5m API key) |
 | `/deck <row> on\|off` | Show or hide a row: `plans agents context limits spend cache route pet clock weather` |

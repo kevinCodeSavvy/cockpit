@@ -111,7 +111,7 @@ On Desktop it's an animated SVG. In the terminal it's drawn as a picture, so it 
 | `/deck`, `0` in an empty prompt, or the **Deck** footer button | Collapse or expand |
 | `/deck style` | Style picker with live previews (keys 1–6) |
 | `/deck style <name>` | `segments`, `line`, `solid`, `dots`, `pixel`, `spark` |
-| `/deck <section> on\|off` | `plans agents context limits route pet clock weather all` |
+| `/deck <section> on\|off` | `plans agents context limits spend cache route pet clock weather all` |
 | `/deck city <name>` | Weather city |
 | `/deck panel [off]` | Open Deck in a panel of its own, always expanded |
 | `/deck version` | Show which Deck version is running |
