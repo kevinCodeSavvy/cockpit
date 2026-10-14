@@ -21,11 +21,19 @@ Works in Claude Code Desktop and the terminal. Needs Claude Code 2.1.287 or late
 
 Restart Claude Code (or run `/reload-plugins`). Installing `cockpit` pulls in `deck`, `next-steps` and `jev-model-router` as dependencies. You can also install any one of them on its own: `/plugin install deck@cockpit`.
 
+## First run
+
+The first time you start a session after installing, with no TypeSafe key set, the Jev router prints a **one-time** line in the transcript. It says routing is using Claude Code's built-in classifier and shows the command for saving a key (the same one in [Set up Jev model routing](#set-up-jev-model-routing)). It only prints the command: it asks for the key with hidden input and never reads or logs one.
+
+- It shows **once**, then never again, so you can ignore it if you don't want a key.
+- It stays quiet if a key is already set or you chose `provider: builtin`.
+- After you save a key, restart Claude Code for it to take effect.
+
 ## Set up Jev model routing
 
 The router asks [TypeSafe's Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev), a small decision model, how hard each task is, then picks the model and reasoning effort for it: mechanical work goes to a cheaper model, hard or risky work goes to a deeper one. Deck's **Model route** row shows every decision live, with Jev's confidence.
 
-**It works without a key.** (The first session after install prints a one-time reminder with the save command below.) With no key the router uses Claude Code's built-in classifier: nothing leaves your machine, but there is no confidence score, and it can only move a task *up*. Add a TypeSafe key to get Jev's calibrated confidence and routing in both directions.
+**It works without a key.** (See [First run](#first-run) for the one-time reminder.) With no key the router uses Claude Code's built-in classifier: nothing leaves your machine, but there is no confidence score, and it can only move a task *up*. Add a TypeSafe key to get Jev's calibrated confidence and routing in both directions.
 
 1. **Get a key.** Create an API key in your TypeSafe account at [typesafe.ai](https://typesafe.ai).
 2. **Save it.** Run this in your own terminal. The prompt hides what you paste, and the key never goes into a chat, a file, or `settings.json` (Claude Code stores it as a sensitive value):
