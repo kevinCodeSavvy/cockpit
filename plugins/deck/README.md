@@ -192,10 +192,7 @@ Deck makes two kinds of network request, both to Open-Meteo and only when you se
 ```bash
 claude plugin validate ./claude-deck
 cd claude-deck && claude plugin test
-node assets/make-banner.mjs && node assets/make-demo.mjs && node assets/make-styles.mjs && node assets/make-social.mjs
 ```
-
-The banner, the demos, the styles gallery and the social card are generated from the mod's own drawing code, so they always match what Deck really draws.
 
 ## Modifications
 
