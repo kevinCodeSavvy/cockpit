@@ -57,30 +57,34 @@ The main-chat model is off on purpose. Switching it mid-session throws away the 
 printf '{"routeMainModel":"true"}' | claude plugin configure jev-model-router@cockpit --values-stdin
 ```
 
-### Jev commands
+### Shadow log and auto-tune
+
+`/jev-shadow` and `/jev-dashboard` (see [Cockpit commands](#cockpit-commands)) start empty and fill as you work. Behind them, a **shadow log** spot-checks a sample of prompts (all the ones Jev is unsure about, plus about one in ten of the rest) against Opus in the background, at most 6 calls an hour. It never changes a routing decision or delays a turn. **Auto-tune** uses that log to nudge the "unsure" floor by 0.05 at most once a day and rolls it back if escalations jump. The full details, every option and the privacy notes are in [plugins/jev-model-router/README.md](plugins/jev-model-router/README.md).
+
+## Cockpit commands
 
 | Command | What it does |
 |---|---|
-| `/jev-shadow` | Shows how often Opus agreed with Jev, by Jev's confidence level, plus the confidence floor in force and the last tuning changes. Reads saved data only and calls no model. |
-| `/jev-dashboard` | Writes a local HTML page of the router's daily numbers (prompts rated, escalated, spot-checked, agreed) and opens it in your browser. `/jev-dashboard no-open` writes it without opening. |
-
-Both start empty and fill as you work. Behind them, a **shadow log** spot-checks a sample of prompts (all the ones Jev is unsure about, plus about one in ten of the rest) against Opus in the background, at most 6 calls an hour. It never changes a routing decision or delays a turn. **Auto-tune** uses that log to nudge the "unsure" floor by 0.05 at most once a day and rolls it back if escalations jump. The full details, every option and the privacy notes are in [plugins/jev-model-router/README.md](plugins/jev-model-router/README.md).
-
-## Deck commands
-
-| Command | What it does |
-|---|---|
-| `/deck` | Collapse or expand |
+| `/deck` | Collapse or expand Deck |
 | `/deck always on\|off` | Open expanded in every new session (default on) |
 | `/deck cache 1h\|5m` | Prompt-cache lifetime for the Cache row (1h subscription, 5m API key) |
 | `/deck <row> on\|off` | Show or hide a row: `plans agents context limits spend cache route pet clock weather` |
 | `/deck cost on` | Also track spend per day and month |
 | `/deck quiet on\|off` | Hide or show the router's own log lines (Deck already shows the route) |
 | `/deck status` | Print everything Deck shows |
-| `/jev-shadow` | Opus-vs-Jev agreement report (see above) |
-| `/jev-dashboard` | Open the router's local stats page (see above) |
+| `/jev-shadow` | Shows how often Opus agreed with Jev, by Jev's confidence level, plus the confidence floor in force and the last tuning changes. Reads saved data only and calls no model. |
+| `/jev-dashboard` | Writes a local HTML page of the router's daily numbers and opens it in your browser. `/jev-dashboard no-open` writes it without opening. |
+| `/next 1`, `/next 2`, `/next 3` | Desktop app: put that next-step suggestion in the prompt box as an editable draft (the terminal uses the 1, 2, 3 and 0 keys instead) |
 
-More in `plugins/deck/README.md`. Spend is API-equivalent dollars; on a subscription it is not a bill.
+More Deck commands are in [plugins/deck/README.md](plugins/deck/README.md). Spend is API-equivalent dollars; on a subscription it is not a bill.
+
+## Modifications
+
+Deck, next-steps and the Jev router are other people's work, changed for this bundle. What changed in each is listed in its own README:
+
+- [Deck modifications](plugins/deck/README.md#modifications): opens expanded in every new session, new Spend and Cache rows.
+- [next-steps modifications](plugins/next-steps/README.md#modifications): suggestions drawn in their own panel above Deck.
+- [Jev router](plugins/jev-model-router/README.md#credits): the original template plus the unsure floor, shadow log, commands, auto-tune and cache-aware switching.
 
 ## Credits and licences
 
