@@ -38,6 +38,14 @@ Suggestions draw above the prompt in the terminal. Where the session also draws 
 
 The desktop app draws no buttons, so the suggestions appear as notice rows (`/next 1`, `/next 2`, ...). Type `/next 2` and suggestion 2 is written into the prompt box as a draft; edit it, then press Enter.
 
+## Modifications
+
+Based on `next-steps` 1.0.8 by Thariq Shihipar, from [anthropics/claude-plugins-community](https://github.com/anthropics/claude-plugins-community) (Apache-2.0, see `LICENSE` and `NOTICE`). Changed by Kevin Fong in 1.0.9:
+
+- The suggestions (and the "next steps…" loading line) are drawn in their own rounded, bordered panel **above** whatever else sits in the band above the prompt, such as Deck. Originally they were appended below it.
+
+Suggestions, hotkeys (1, 2, 3 and 0) and everything else work as upstream.
+
 ## Install
 
 ```
