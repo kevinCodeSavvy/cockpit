@@ -69,6 +69,16 @@ printf '{"routeMainModel":"true"}' | claude plugin configure jev-model-router@co
 
 `/jev-shadow` and `/jev-dashboard` (see [Cockpit commands](#cockpit-commands)) start empty and fill as you work. Behind them, a **shadow log** spot-checks a sample of prompts (all the ones Jev is unsure about, plus about one in ten of the rest) against Opus in the background, at most 6 calls an hour. It never changes a routing decision or delays a turn. **Auto-tune** uses that log to nudge the "unsure" floor by 0.05 at most once a day and rolls it back if escalations jump. The full details, every option and the privacy notes are in [plugins/jev-model-router/README.md](plugins/jev-model-router/README.md).
 
+## Bar styles
+
+Deck's bars come in six styles: `pixel`, `segments`, `line`, `solid`, `dots` and `spark`. Run `/deck style` for a picker with live previews, or `/deck style <name>` to set one. Desktop and the terminal each keep their own choice, and `/deck collapsed chips|text|rings` changes the collapsed look.
+
+<p align="center">
+  <img src="plugins/deck/assets/styles.svg" alt="Every Deck bar style (pixel, segments, line, solid, dots, spark) on Desktop and in the terminal, and the three collapsed looks: chips, text and rings." width="860">
+</p>
+
+*Gallery from the original [claude-deck](https://github.com/nvr0x5/claude-deck) (MIT), generated from Deck's own drawing code.*
+
 ## Cockpit commands
 
 | Command | What it does |
