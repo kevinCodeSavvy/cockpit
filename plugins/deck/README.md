@@ -1,8 +1,4 @@
 <p align="center">
-  <img src="assets/banner.svg" alt="deck — a cockpit for Claude Code" width="100%">
-</p>
-
-<p align="center">
   <a href="https://github.com/nvr0x5/claude-deck/actions/workflows/test.yml"><img alt="tests" src="https://img.shields.io/github/actions/workflow/status/nvr0x5/claude-deck/test.yml?branch=main&style=flat-square&label=tests&labelColor=14121a"></a>
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-D97757?style=flat-square&labelColor=14121a"></a>
   <img alt="Claude Code 2.1.286+" src="https://img.shields.io/badge/Claude%20Code-2.1.286%2B-9C95EC?style=flat-square&labelColor=14121a">
@@ -35,14 +31,6 @@ It pairs with **[jev-model-router](#model-routing)**: when the router picks a mo
 - **Live progress.** Plan bars, an activity bar for any task, and subagent strips with the model each one got.
 - **Six bar styles, three collapsed looks.** Pixel, segments, line, solid, dots and spark; chips, text and rings. Pick yours with `/deck style`; see them all in [Styles](#styles).
 - **A tiny pet** that plays while Claude works and raises a **!** when Claude needs you.
-
-<p align="center">
-  <img src="assets/demo-desktop.svg" alt="An illustrative session in the Claude Code desktop app. Deck shows the model route, a plan bar that fills stage by stage with two agents as strips under it, turns amber when a command needs approval and green when done, while the pet plays, alerts, reads and celebrates. Context and the 5h and 7d limits with countdowns sit below. At the end Deck collapses to one status line." width="860">
-</p>
-
-<p align="center">
-  <img src="assets/demo-terminal.svg" alt="The same session in the terminal (Ghostty): solid bars for the route, the plan with agent rows, context and the 5h and 7d limits, the pet above, and the one-line collapsed view at the end." width="860">
-</p>
 
 ## Install
 
