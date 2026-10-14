@@ -209,6 +209,17 @@ node assets/make-banner.mjs && node assets/make-demo.mjs && node assets/make-sty
 
 The banner, the demos, the styles gallery and the social card are generated from the mod's own drawing code, so they always match what Deck really draws.
 
+## Modifications
+
+This copy is based on [nvr0x5/claude-deck](https://github.com/nvr0x5/claude-deck) 0.4.11 and was changed by Kevin Fong in 0.4.12 (see [CHANGELOG.md](CHANGELOG.md)):
+
+- **Opens expanded in every new session.** The original reopens however the last session left it. New `/deck always on|off` (default on) controls this.
+- **New Spend row.** This session's cost so far, plus today's total when `/deck cost on`. Toggle with `/deck spend on|off`.
+- **New Cache row.** A countdown to the prompt cache going cold and the estimated cost of re-writing it (`warm · rewrite ~$1.01`, then `cold · rewrite ~$1.01`). Toggle with `/deck cache on|off`; `/deck cache 1h|5m` sets the cache lifetime. Prices are list cache-write rates in `hooks/register.js` (`CACHE_WRITE`) and need editing when rates change.
+- **Context row on a fresh session.** It shows the window size with an empty bar instead of waiting for the first reply.
+
+Everything else is unchanged from upstream.
+
 ## Credits
 
 - The desktop pixel bar, gliding pill, agent strips and plan parsing adapt [plan-progress](https://github.com/zycck/claude-mods) by Kirill Serditov (MIT, see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)).
