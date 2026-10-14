@@ -1,0 +1,6 @@
+next-steps
+Original work by Thariq Shihipar, from https://github.com/anthropics/claude-plugins-community
+(plugins/next-steps), licensed under the Apache License 2.0 (see LICENSE).
+
+Modified by Kevin Fong (2026): the suggestions are drawn in their own bordered panel above
+whatever else sits in the band above the prompt (such as Deck), instead of below it.

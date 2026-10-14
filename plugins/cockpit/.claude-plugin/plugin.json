@@ -1,0 +1,8 @@
+{
+  "name": "cockpit",
+  "version": "1.0.0",
+  "description": "One install for the whole panel: Deck (context, limits, spend, prompt-cache timer, model route), next-step suggestions in their own panel, and the Jev model router.",
+  "author": { "name": "Kevin Fong", "url": "https://github.com/kevinCodeSavvy" },
+  "license": "MIT",
+  "dependencies": ["deck", "next-steps", "jev-model-router"]
+}
