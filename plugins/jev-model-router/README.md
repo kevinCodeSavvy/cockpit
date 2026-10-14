@@ -237,6 +237,8 @@ Or install everything at once with `/plugin install cockpit@cockpit`.
 
 2. Optional: other options go in the same way, as one JSON object of single-line strings, for example `{"routeMainModel":"true"}`. `claude plugin configure jev-model-router@cockpit` lists every option and whether it is set.
 
+   Until a key is set, the first session after install prints this command once in the transcript as a reminder (it never shows again, and not at all if you set a key or `provider` to `builtin`).
+
 3. Quit and reopen Claude Code, start a new session, and look for `[jev-model-router] ready on typesafe` in the log. `/jev-shadow` and `/jev-dashboard` start empty and fill as you work.
 
 To update later: `/plugin update jev-model-router@cockpit`, then restart.
