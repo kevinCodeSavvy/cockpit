@@ -233,6 +233,7 @@ const CACHE_WRITE = [
   ['haiku', 2],
 ]
 const CACHE_TTL_MS = { '1h': 3600_000, '5m': 300_000 }
+const CACHE_WARN_MS = 60_000 // under this the cache is about to lapse
 let cacheAt = 0 // ms of the main thread's last request; 0 before the first
 
 function cacheWriteRate(model) {
@@ -846,6 +847,18 @@ function cacheRow(now) {
     return { ...base, style: 'hot', title: 'Cache', pct: 0, name: 'cold · rewrite ' + (rewrite || '?'), right: tag + ' lapsed', short: 'cache cold' + (rewrite ? ' ' + rewrite : '') }
   }
   const p = (left / ttl) * 100
+  if (left < CACHE_WARN_MS) {
+    // last minute: shout, but keep draining so the bar still shows the time
+    return {
+      ...base,
+      style: 'hot',
+      title: 'Cache',
+      pct: p,
+      name: '⚠ expires in ' + Math.ceil(left / 1000) + 's · rewrite ' + (rewrite || '?'),
+      right: '⏱ ' + clockLeft(left),
+      short: 'cache ⚠' + humanLeft(left) + (rewrite ? ' ' + rewrite : ''),
+    }
+  }
   return {
     ...base,
     style: p >= 33 ? 'ok' : p >= 10 ? 'warn' : 'hot',
