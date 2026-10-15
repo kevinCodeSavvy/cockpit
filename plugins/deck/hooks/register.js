@@ -36,7 +36,7 @@ const FOLD_MS = 5000
 const MAX_STRIPS = 4
 const ASK_DELAY_MS = 600
 const TRACK_H = 22
-const VERSION = '0.4.12' // keep in step with .claude-plugin/plugin.json (a test checks)
+const VERSION = '0.4.13' // keep in step with .claude-plugin/plugin.json (a test checks)
 const RIGHT_W = 92
 const TITLE_MAX_CH = 22 // a long prompt as a bar title would squeeze every track
 const TITLE_MAX_PX = 160
@@ -171,18 +171,54 @@ function series(key, windowMs, now) {
   return list.map((x) => x.p)
 }
 
-// how fast a window moves: percent per hour (or per day for the weekly window)
-function burnRate(key, now) {
+// percent per ms over the window, or null when the history can't say (too short, falling, too slow)
+function ratePerMs(key, now) {
   const daily = key.startsWith('seven_day')
   const list = (hist[key] ?? []).filter((x) => now - x.t <= (daily ? 24 : 1) * 3600_000)
-  if (list.length < 2) return ''
+  if (list.length < 2) return null
   const a = list[0]
   const b = list[list.length - 1]
   const span = b.t - a.t
-  if (span < 5 * 60_000 || b.p < a.p) return ''
-  const per = ((b.p - a.p) / span) * (daily ? 86_400_000 : 3_600_000)
-  if (per < 0.05) return ''
+  if (span < 5 * 60_000 || b.p < a.p) return null
+  const rate = (b.p - a.p) / span
+  // same floor as the display: 0.05 per hour, or per day for the weekly window
+  if (rate * (daily ? 86_400_000 : 3_600_000) < 0.05) return null
+  return rate
+}
+
+// how fast a window moves: percent per hour (or per day for the weekly window)
+function burnRate(key, now) {
+  const rate = ratePerMs(key, now)
+  if (rate == null) return ''
+  const daily = key.startsWith('seven_day')
+  const per = rate * (daily ? 86_400_000 : 3_600_000)
   return '+' + (per < 10 ? per.toFixed(1) : Math.round(per)) + (daily ? '%/day' : '%/h')
+}
+
+// when a limit will be reached at the current pace; null if it resets first or the pace is unknown
+function projectedHit(key, percentUsed, resetsAt, now) {
+  if (percentUsed == null || Number.isNaN(percentUsed) || percentUsed >= 100) return null
+  const rate = ratePerMs(key, now)
+  if (rate == null) return null
+  const minutesLeft = (100 - percentUsed) / rate / 60_000
+  const hitAt = now + minutesLeft * 60_000
+  // a reset at or before the hit means the limit is never reached
+  const reset = resetsAt ? Date.parse(resetsAt) : NaN
+  if (!Number.isNaN(reset) && reset <= hitAt) return null
+  return { hitAt, minutesLeft }
+}
+
+// "4:12pm" for today, "Thu 4pm" (minutes only if not on the hour) for a later day; 12-hour, local time
+function hitClock(ms, now) {
+  const d = new Date(ms)
+  const h = d.getHours()
+  const min = d.getMinutes()
+  const hour12 = h % 12 || 12
+  const ampm = h < 12 ? 'am' : 'pm'
+  const sameDay = d.toDateString() === new Date(now).toDateString()
+  if (sameDay) return hour12 + ':' + String(min).padStart(2, '0') + ampm
+  const day = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()]
+  return day + ' ' + hour12 + (min ? ':' + String(min).padStart(2, '0') : '') + ampm
 }
 
 // spend: this session's running total, added into today and this month across sessions
@@ -210,6 +246,7 @@ const CACHE_WRITE = [
   ['haiku', 2],
 ]
 const CACHE_TTL_MS = { '1h': 3600_000, '5m': 300_000 }
+const CACHE_WARN_MS = 60_000 // under this the cache is about to lapse
 let cacheAt = 0 // ms of the main thread's last request; 0 before the first
 
 function cacheWriteRate(model) {
@@ -761,21 +798,28 @@ function collectRows(now) {
     for (const rl of usage.rateLimits ?? []) {
       const [title, tag] = limitName(rl.kind)
       const p = rl.percentUsed
+      let style = p >= 80 ? 'hot' : p >= 50 ? 'warn' : 'ok'
+      // when the pace reaches the limit before the reset, say when; the bar warns, and goes hot inside two hours
+      const hit = projectedHit(rl.kind, p, rl.resetsAt, now)
+      const at = hit ? hitClock(hit.hitAt, now) : ''
+      if (hit && style !== 'hot') style = hit.minutesLeft < 120 ? 'hot' : 'warn'
       rows.push({
         id: 'limit:' + rl.kind,
         kind: 'meter',
         limit: true,
-        style: p >= 80 ? 'hot' : p >= 50 ? 'warn' : 'ok',
+        style,
         title,
         pct: Math.min(100, p),
         marks: [{ f: 0.25 }, { f: 0.5 }, { f: 0.75 }],
-        name: tag + ' · ' + Math.round(p) + '% used',
+        name: tag + ' · ' + Math.round(p) + '% used' + (hit ? ' · hits ~' + at : ''),
         count: '',
-        right: rl.resetsAt ? '↻ ' + countdown(rl.resetsAt) : '',
-        short: tag + ' ' + Math.round(p) + '%' + (rl.resetsAt ? ' ↻' + humanReset(rl.resetsAt) : ''),
+        // a limit that will be hit before it resets shows when, in place of the reset (the chips keep both)
+        right: hit ? '⚠' + at : rl.resetsAt ? '↻ ' + countdown(rl.resetsAt) : '',
+        short: tag + ' ' + Math.round(p) + '%' + (rl.resetsAt ? ' ↻' + humanReset(rl.resetsAt) : '') + (hit ? ' ⚠' + at : ''),
         section: 'limits',
         kindKey: rl.kind,
         resets: rl.resetsAt ? humanReset(rl.resetsAt) : '',
+        ...(hit ? { hitAt: at } : {}),
         hist: series(rl.kind, rl.kind.startsWith('seven_day') ? 24 * 3600_000 : 3600_000, now),
         rate: burnRate(rl.kind, now),
       })
@@ -823,6 +867,18 @@ function cacheRow(now) {
     return { ...base, style: 'hot', title: 'Cache', pct: 0, name: 'cold · rewrite ' + (rewrite || '?'), right: tag + ' lapsed', short: 'cache cold' + (rewrite ? ' ' + rewrite : '') }
   }
   const p = (left / ttl) * 100
+  if (left < CACHE_WARN_MS) {
+    // last minute: shout, but keep draining so the bar still shows the time
+    return {
+      ...base,
+      style: 'hot',
+      title: 'Cache',
+      pct: p,
+      name: '⚠ expires in ' + Math.ceil(left / 1000) + 's · rewrite ' + (rewrite || '?'),
+      right: '⏱ ' + clockLeft(left),
+      short: 'cache ⚠' + humanLeft(left) + (rewrite ? ' ' + rewrite : ''),
+    }
+  }
   return {
     ...base,
     style: p >= 33 ? 'ok' : p >= 10 ? 'warn' : 'hot',
@@ -1339,7 +1395,7 @@ async function deckView($, e, next) {
           flexShrink: 0,
           columnGap: 1,
           alignItems: 'center',
-          children: [ring, Text({ color: TEXT, bold: true, wrap: 'truncate', children: [Math.round(row.pct) + '%'] }), Text({ color: MUTED, wrap: 'truncate', children: [tag + (row.resets ? ' · resets ' + row.resets : '')] })],
+          children: [ring, Text({ color: TEXT, bold: true, wrap: 'truncate', children: [Math.round(row.pct) + '%'] }), Text({ color: MUTED, wrap: 'truncate', children: [tag + (row.resets ? ' · resets ' + row.resets : '') + (row.hitAt ? ' · hits ~' + row.hitAt : '')] })],
         }),
       )
     }
