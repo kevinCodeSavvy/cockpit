@@ -12,6 +12,22 @@ A panel above the Claude Code prompt that shows what is going on, plus suggested
 
 Works in Claude Code Desktop and the terminal. Needs Claude Code 2.1.287 or later.
 
+## See it work
+
+*Animated illustrations of the panel, drawn to match what Deck shows; they are not screen recordings.*
+
+**Cache warning.** The Cache row drains as the prompt cache runs down. In the last minute it turns red and counts down in seconds with the cost of a cold re-write. Send any message to warm it again.
+
+<img src="docs/assets/cache.svg" width="900" alt="Animation: the Cache row drains over five minutes, green while warm, amber as it runs low, then red in the last minute reading 55s, rewrite about $0.50, with the countdown beside it">
+
+**Limit forecast.** When your usage is rising and the pace would reach the 5-hour or 7-day limit before it resets, the row says when, and the hit time replaces the reset countdown. The bar goes amber, then red inside two hours.
+
+<img src="docs/assets/forecast.svg" width="900" alt="Animation: the 5-hour limit row shows percent used and a reset countdown, then once the pace would hit the limit before the reset it shows a warning with the hit time, 3:50pm, and later 2:50pm as usage keeps rising, with the bar turning amber then red">
+
+**Model route.** For each prompt the Jev router judges how hard the task is and picks the reasoning effort, and Deck shows the decision with its confidence. Jev's suggestion for your main chat's model is only applied if you turn `routeMainModel` on; subagents are routed by default.
+
+<img src="docs/assets/route.svg" width="900" alt="Animation: the Model route row for three prompts. A typo fix gets low effort and a haiku suggestion that is not applied, a question gets medium effort, and a risky database migration gets extra high effort with a risk flag. Each decision adds a square to the history">
+
 ## Install
 
 ```

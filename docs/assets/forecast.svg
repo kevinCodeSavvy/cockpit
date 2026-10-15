@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 188" width="900" height="188" role="img" aria-label="Animation: the 5-hour limit row. First it shows the percent used and a reset countdown. Once usage has been rising for a few minutes and the pace would reach the limit before it resets, the countdown is replaced by a warning with the time the limit will be hit, 3:50pm, and the bar turns amber. As usage keeps rising the hit time moves earlier, to 2:50pm, and the bar turns red.">
+<style>
+text{font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;dominant-baseline:middle}
+.forecast0{animation:kforecast0 14s linear infinite}@keyframes kforecast0{0%,30.00%{opacity:1}30.01%,100%{opacity:0}}
+.forecast1{animation:kforecast1 14s linear infinite}@keyframes kforecast1{0%,30.00%{opacity:0}30.01%,62.00%{opacity:1}62.01%,100%{opacity:0}}
+.forecast2{animation:kforecast2 14s linear infinite}@keyframes kforecast2{0%,62.00%{opacity:0}62.01%,100%{opacity:1}}
+.forecast3{animation:kforecast3 14s linear infinite}@keyframes kforecast3{0%,29.90%{opacity:1}29.91%,100%{opacity:0}}
+.forecast4{animation:kforecast4 14s linear infinite}@keyframes kforecast4{0%,30.00%{opacity:0}30.01%,61.90%{opacity:1}61.91%,100%{opacity:0}}
+.forecast5{animation:kforecast5 14s linear infinite}@keyframes kforecast5{0%,62.00%{opacity:0}62.01%,100%{opacity:1}}
+.forecast6{animation:kforecast6 14s linear infinite}@keyframes kforecast6{0%,29.90%{opacity:1}29.91%,100%{opacity:0}}
+.forecast7{animation:kforecast7 14s linear infinite}@keyframes kforecast7{0%,30.00%{opacity:0}30.01%,61.90%{opacity:1}61.91%,100%{opacity:0}}
+.forecast8{animation:kforecast8 14s linear infinite}@keyframes kforecast8{0%,62.00%{opacity:0}62.01%,100%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.ph{animation:none;opacity:0}.last{opacity:1}.drain{animation:none;transform:scaleX(.1)}}
+</style>
+<rect width="900" height="188" rx="10" fill="#16161a" stroke="#2b2a28"/>
+<text x="20" y="24" fill="#77756f" textLength="140.4" lengthAdjust="spacing" xml:space="preserve" >0: deck ▾ · 3 rows</text>
+<text x="20" y="64" fill="#5DCAA5" textLength="7.8" lengthAdjust="spacing" xml:space="preserve" >◔</text><text x="40" y="64" fill="#e8e6e1" textLength="93.6" lengthAdjust="spacing" xml:space="preserve" >Session · 5h</text>
+<rect x="196" y="53" width="664" height="22" rx="4" fill="#2b2a28"/>
+<g class="forecast0 ph"><rect x="196" y="53" width="272.2" height="22" rx="4" fill="#5DCAA5"/><text x="206" y="64" fill="#e8e6e1" textLength="101.4" lengthAdjust="spacing" xml:space="preserve" stroke="#16161a" stroke-width="3" paint-order="stroke" stroke-linejoin="round">5h · 41% used</text><text x="809.8" y="64" fill="#9a9893" textLength="70.2" lengthAdjust="spacing" xml:space="preserve" >↻ 3:28:21</text></g>
+<g class="forecast1 ph"><rect x="196" y="53" width="365.2" height="22" rx="4" fill="#EBA83A"/><text x="206" y="64" fill="#e8e6e1" textLength="218.4" lengthAdjust="spacing" xml:space="preserve" stroke="#16161a" stroke-width="3" paint-order="stroke" stroke-linejoin="round">5h · 55% used · hits ~3:50pm</text><text x="825.4" y="64" fill="#EBA83A" textLength="54.6" lengthAdjust="spacing" xml:space="preserve" >⚠3:50pm</text></g>
+<g class="forecast2 ph last"><rect x="196" y="53" width="491.4" height="22" rx="4" fill="#E2706F"/><text x="206" y="64" fill="#e8e6e1" textLength="218.4" lengthAdjust="spacing" xml:space="preserve" stroke="#16161a" stroke-width="3" paint-order="stroke" stroke-linejoin="round">5h · 74% used · hits ~2:50pm</text><text x="825.4" y="64" fill="#E2706F" textLength="54.6" lengthAdjust="spacing" xml:space="preserve" >⚠2:50pm</text></g>
+<text x="20" y="100" fill="#5DCAA5" textLength="7.8" lengthAdjust="spacing" xml:space="preserve" >◔</text><text x="40" y="100" fill="#e8e6e1" textLength="85.8" lengthAdjust="spacing" xml:space="preserve" >Weekly · 7d</text>
+<rect x="196" y="89" width="664" height="22" rx="4" fill="#2b2a28"/><rect x="196" y="89" width="112.9" height="22" rx="4" fill="#5DCAA5"/><text x="206" y="100" fill="#e8e6e1" textLength="101.4" lengthAdjust="spacing" xml:space="preserve" >7d · 17% used</text><text x="802" y="100" fill="#9a9893" textLength="78.0" lengthAdjust="spacing" xml:space="preserve" >↻ 22:18:21</text>
+<g class="forecast3 ph"><text x="20" y="140" fill="#77756f" textLength="585.0" lengthAdjust="spacing" xml:space="preserve" >Usage is rising. Deck needs about 5 minutes of history before it forecasts.</text></g>
+<g class="forecast4 ph"><text x="20" y="140" fill="#EBA83A" textLength="733.2" lengthAdjust="spacing" xml:space="preserve" >At this pace the limit runs out before it resets (5:00pm), so the hit time replaces the reset.</text></g>
+<g class="forecast5 ph last"><text x="20" y="140" fill="#E2706F" textLength="608.4" lengthAdjust="spacing" xml:space="preserve" >Pace picks up: hit time moves earlier and, inside two hours, the bar goes red.</text></g>
+<g class="forecast6 ph"><text x="20" y="164" fill="#77756f" textLength="234.0" lengthAdjust="spacing" xml:space="preserve" >Collapsed chip:  5h 41% ↻3h28m</text></g>
+<g class="forecast7 ph"><text x="20" y="164" fill="#77756f" textLength="592.8" lengthAdjust="spacing" xml:space="preserve" >Collapsed chip keeps the reset and adds the hit time:  5h 55% ↻3h28m ⚠3:50pm</text></g>
+<g class="forecast8 ph last"><text x="20" y="164" fill="#77756f" textLength="592.8" lengthAdjust="spacing" xml:space="preserve" >Collapsed chip keeps the reset and adds the hit time:  5h 74% ↻3h28m ⚠2:50pm</text></g>
+</svg>
