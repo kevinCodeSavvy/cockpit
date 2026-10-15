@@ -813,7 +813,8 @@ function collectRows(now) {
         marks: [{ f: 0.25 }, { f: 0.5 }, { f: 0.75 }],
         name: tag + ' · ' + Math.round(p) + '% used' + (hit ? ' · hits ~' + at : ''),
         count: '',
-        right: rl.resetsAt ? '↻ ' + countdown(rl.resetsAt) : '',
+        // a limit that will be hit before it resets shows when, in place of the reset (the chips keep both)
+        right: hit ? '⚠' + at : rl.resetsAt ? '↻ ' + countdown(rl.resetsAt) : '',
         short: tag + ' ' + Math.round(p) + '%' + (rl.resetsAt ? ' ↻' + humanReset(rl.resetsAt) : '') + (hit ? ' ⚠' + at : ''),
         section: 'limits',
         kindKey: rl.kind,
