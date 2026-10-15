@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.13
+
+- The Cache row warns in the last minute: it turns red and reads `⚠ expires in 45s · rewrite ~$0.80`, and the collapsed chip shows `cache ⚠45s`. The bar keeps draining, and nothing changes before the last minute.
+- The 5h and 7d limit rows say when you will hit the limit at your current pace, if that comes before the reset: `hits ~4:12pm` (or `hits ~Thu 4pm` on a later day). The bar turns amber, and red inside two hours. In the expanded rows the right-hand column shows `⚠4:12pm` in place of the reset countdown; the collapsed chips and rings keep the reset and add the hit time. It needs at least five minutes of rising usage, like the burn rate, and shows nothing when the limit resets first.
+
 ## 0.4.12
 
 - Deck opens expanded in every new session. It used to start however the last session left it, so one collapse stuck everywhere. `/deck always off` brings the old behaviour back.
