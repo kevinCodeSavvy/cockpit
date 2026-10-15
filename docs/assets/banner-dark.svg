@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 200" width="900" height="200" role="img" aria-label="cockpit: a panel above your Claude Code prompt that shows context, limits, spend, the prompt cache and the model route">
+<style>
+text{font:15px ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;dominant-baseline:middle}
+.dr-bannerdark{transform-origin:600px 130px;animation:dr-bannerdark 8s linear infinite}@keyframes dr-bannerdark{0%{transform:scaleX(1)}100%{transform:scaleX(.18)}}
+@media (prefers-reduced-motion:reduce){.ph{animation:none;opacity:0}.last{opacity:1}.drain{animation:none;transform:scaleX(.1)}.still{animation:none}}
+</style>
+
+<rect x=".5" y=".5" width="899" height="199" rx="12" fill="#1b1b1f" stroke="#2f2f33"/>
+<text x="48" y="88" fill="#f2f0ea" style="font-size:66px;font-weight:700">cockpit</text>
+<text x="50" y="140" fill="#a8a69f" style="font-size:22px;">A panel above your Claude Code prompt</text>
+<circle cx="578" cy="62" r="5" fill="#8B7CF6"/><rect x="600" y="52" width="250" height="20" rx="6" fill="#2f2f33"/>
+<rect x="600" y="52" width="95" height="20" rx="6" fill="#8B7CF6"/>
+<circle cx="578" cy="96" r="5" fill="#52A06F"/><rect x="600" y="86" width="250" height="20" rx="6" fill="#2f2f33"/>
+<rect x="600" y="86" width="35" height="20" rx="6" fill="#52A06F"/>
+<circle cx="578" cy="130" r="5" fill="#52A06F"/><rect x="600" y="120" width="250" height="20" rx="6" fill="#2f2f33"/>
+<g class="drain dr-bannerdark"><rect x="600" y="120" width="250" height="20" rx="6" fill="#52A06F"/></g>
+</svg>

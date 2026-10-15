@@ -7,7 +7,7 @@ text{font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;dominant-bas
 .route3{animation:kroute3 15s linear infinite}@keyframes kroute3{0%,32.90%{opacity:1}32.91%,100%{opacity:0}}
 .route4{animation:kroute4 15s linear infinite}@keyframes kroute4{0%,33.00%{opacity:0}33.01%,65.90%{opacity:1}65.91%,100%{opacity:0}}
 .route5{animation:kroute5 15s linear infinite}@keyframes kroute5{0%,66.00%{opacity:0}66.01%,100%{opacity:1}}
-@media (prefers-reduced-motion:reduce){.ph{animation:none;opacity:0}.last{opacity:1}.drain{animation:none;transform:scaleX(.1)}}
+@media (prefers-reduced-motion:reduce){.ph{animation:none;opacity:0}.last{opacity:1}.drain{animation:none;transform:scaleX(.1)}.still{animation:none}}
 </style>
 <rect width="900" height="196" rx="10" fill="#16161a" stroke="#2b2a28"/>
 <text x="20" y="24" fill="#77756f" textLength="140.4" lengthAdjust="spacing" xml:space="preserve" >0: deck ▾ · 1 rows</text>
