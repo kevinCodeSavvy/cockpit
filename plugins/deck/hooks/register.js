@@ -208,6 +208,19 @@ function projectedHit(key, percentUsed, resetsAt, now) {
   return { hitAt, minutesLeft }
 }
 
+// "4:12pm" for today, "Thu 4pm" (minutes only if not on the hour) for a later day; 12-hour, local time
+function hitClock(ms, now) {
+  const d = new Date(ms)
+  const h = d.getHours()
+  const min = d.getMinutes()
+  const hour12 = h % 12 || 12
+  const ampm = h < 12 ? 'am' : 'pm'
+  const sameDay = d.toDateString() === new Date(now).toDateString()
+  if (sameDay) return hour12 + ':' + String(min).padStart(2, '0') + ampm
+  const day = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()]
+  return day + ' ' + hour12 + (min ? ':' + String(min).padStart(2, '0') : '') + ampm
+}
+
 // spend: this session's running total, added into today and this month across sessions
 let sessionId = ''
 let costSeen = null
@@ -785,21 +798,27 @@ function collectRows(now) {
     for (const rl of usage.rateLimits ?? []) {
       const [title, tag] = limitName(rl.kind)
       const p = rl.percentUsed
+      let style = p >= 80 ? 'hot' : p >= 50 ? 'warn' : 'ok'
+      // when the pace reaches the limit before the reset, say when; the bar warns, and goes hot inside two hours
+      const hit = projectedHit(rl.kind, p, rl.resetsAt, now)
+      const at = hit ? hitClock(hit.hitAt, now) : ''
+      if (hit && style !== 'hot') style = hit.minutesLeft < 120 ? 'hot' : 'warn'
       rows.push({
         id: 'limit:' + rl.kind,
         kind: 'meter',
         limit: true,
-        style: p >= 80 ? 'hot' : p >= 50 ? 'warn' : 'ok',
+        style,
         title,
         pct: Math.min(100, p),
         marks: [{ f: 0.25 }, { f: 0.5 }, { f: 0.75 }],
-        name: tag + ' · ' + Math.round(p) + '% used',
+        name: tag + ' · ' + Math.round(p) + '% used' + (hit ? ' · hits ~' + at : ''),
         count: '',
         right: rl.resetsAt ? '↻ ' + countdown(rl.resetsAt) : '',
-        short: tag + ' ' + Math.round(p) + '%' + (rl.resetsAt ? ' ↻' + humanReset(rl.resetsAt) : ''),
+        short: tag + ' ' + Math.round(p) + '%' + (rl.resetsAt ? ' ↻' + humanReset(rl.resetsAt) : '') + (hit ? ' ⚠' + at : ''),
         section: 'limits',
         kindKey: rl.kind,
         resets: rl.resetsAt ? humanReset(rl.resetsAt) : '',
+        ...(hit ? { hitAt: at } : {}),
         hist: series(rl.kind, rl.kind.startsWith('seven_day') ? 24 * 3600_000 : 3600_000, now),
         rate: burnRate(rl.kind, now),
       })
@@ -1375,7 +1394,7 @@ async function deckView($, e, next) {
           flexShrink: 0,
           columnGap: 1,
           alignItems: 'center',
-          children: [ring, Text({ color: TEXT, bold: true, wrap: 'truncate', children: [Math.round(row.pct) + '%'] }), Text({ color: MUTED, wrap: 'truncate', children: [tag + (row.resets ? ' · resets ' + row.resets : '')] })],
+          children: [ring, Text({ color: TEXT, bold: true, wrap: 'truncate', children: [Math.round(row.pct) + '%'] }), Text({ color: MUTED, wrap: 'truncate', children: [tag + (row.resets ? ' · resets ' + row.resets : '') + (row.hitAt ? ' · hits ~' + row.hitAt : '')] })],
         }),
       )
     }
