@@ -171,18 +171,41 @@ function series(key, windowMs, now) {
   return list.map((x) => x.p)
 }
 
-// how fast a window moves: percent per hour (or per day for the weekly window)
-function burnRate(key, now) {
+// percent per ms over the window, or null when the history can't say (too short, falling, too slow)
+function ratePerMs(key, now) {
   const daily = key.startsWith('seven_day')
   const list = (hist[key] ?? []).filter((x) => now - x.t <= (daily ? 24 : 1) * 3600_000)
-  if (list.length < 2) return ''
+  if (list.length < 2) return null
   const a = list[0]
   const b = list[list.length - 1]
   const span = b.t - a.t
-  if (span < 5 * 60_000 || b.p < a.p) return ''
-  const per = ((b.p - a.p) / span) * (daily ? 86_400_000 : 3_600_000)
-  if (per < 0.05) return ''
+  if (span < 5 * 60_000 || b.p < a.p) return null
+  const rate = (b.p - a.p) / span
+  // same floor as the display: 0.05 per hour, or per day for the weekly window
+  if (rate * (daily ? 86_400_000 : 3_600_000) < 0.05) return null
+  return rate
+}
+
+// how fast a window moves: percent per hour (or per day for the weekly window)
+function burnRate(key, now) {
+  const rate = ratePerMs(key, now)
+  if (rate == null) return ''
+  const daily = key.startsWith('seven_day')
+  const per = rate * (daily ? 86_400_000 : 3_600_000)
   return '+' + (per < 10 ? per.toFixed(1) : Math.round(per)) + (daily ? '%/day' : '%/h')
+}
+
+// when a limit will be reached at the current pace; null if it resets first or the pace is unknown
+function projectedHit(key, percentUsed, resetsAt, now) {
+  if (percentUsed == null || Number.isNaN(percentUsed) || percentUsed >= 100) return null
+  const rate = ratePerMs(key, now)
+  if (rate == null) return null
+  const minutesLeft = (100 - percentUsed) / rate / 60_000
+  const hitAt = now + minutesLeft * 60_000
+  // a reset at or before the hit means the limit is never reached
+  const reset = resetsAt ? Date.parse(resetsAt) : NaN
+  if (!Number.isNaN(reset) && reset <= hitAt) return null
+  return { hitAt, minutesLeft }
 }
 
 // spend: this session's running total, added into today and this month across sessions
