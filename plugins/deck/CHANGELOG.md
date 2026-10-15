@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.14
+
+- The last-minute cache warning is shorter so the re-write cost is no longer clipped in the bar: `⚠ 45s · rewrite ~$0.80` instead of `⚠ expires in 45s · rewrite ~$0.80`. Nothing else about the warning changed.
+
 ## 0.4.13
 
 - The Cache row warns in the last minute: it turns red and reads `⚠ expires in 45s · rewrite ~$0.80`, and the collapsed chip shows `cache ⚠45s`. The bar keeps draining, and nothing changes before the last minute.

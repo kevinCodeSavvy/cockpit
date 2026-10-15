@@ -36,7 +36,7 @@ const FOLD_MS = 5000
 const MAX_STRIPS = 4
 const ASK_DELAY_MS = 600
 const TRACK_H = 22
-const VERSION = '0.4.13' // keep in step with .claude-plugin/plugin.json (a test checks)
+const VERSION = '0.4.14' // keep in step with .claude-plugin/plugin.json (a test checks)
 const RIGHT_W = 92
 const TITLE_MAX_CH = 22 // a long prompt as a bar title would squeeze every track
 const TITLE_MAX_PX = 160
@@ -874,7 +874,8 @@ function cacheRow(now) {
       style: 'hot',
       title: 'Cache',
       pct: p,
-      name: '⚠ expires in ' + Math.ceil(left / 1000) + 's · rewrite ' + (rewrite || '?'),
+      // short on purpose: the bar's label has about 25 cells, and the cost is the part that got clipped
+      name: '⚠ ' + Math.ceil(left / 1000) + 's · rewrite ' + (rewrite || '?'),
       right: '⏱ ' + clockLeft(left),
       short: 'cache ⚠' + humanLeft(left) + (rewrite ? ' ' + rewrite : ''),
     }

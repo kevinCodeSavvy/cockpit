@@ -57,13 +57,13 @@ Mods need Claude Code 2.1.286 or later. To try it from a clone without installin
 | **Context** | Tokens used out of the window | Your session |
 | **5h and 7d limits** | Percent used, a live countdown to each reset, how fast you're burning it (`+12%/h`), and when you'd hit the limit at that pace (`⚠4:12pm`) | Your plan's rate limits, no `/usage` needed |
 | **Spend** | What this session has cost so far; with `/deck cost on` also today and this month, added up across sessions | Your session's cost ledger. Dollars are API-equivalent on a subscription |
-| **Cache** | Time left before the prompt cache goes cold and what a cold re-write would cost; red with `⚠ expires in 45s` in the last minute | The last request's time and the context size, priced at the model's cache-write rate |
+| **Cache** | Time left before the prompt cache goes cold and what a cold re-write would cost; red with `⚠ 45s` in the last minute | The last request's time and the context size, priced at the model's cache-write rate |
 | **Model route** | Which model and effort a router picked, and how sure it was | [jev-model-router](#model-routing), if installed |
 | **Clock and weather** | Local time and the weather where you are | Open-Meteo, no key |
 
 **Limit forecast.** When your usage is rising and, at that pace, a 5h or 7d limit would run out *before* it resets, the row says when: `hits ~4:12pm` (`hits ~Thu 4pm` on a later day). The bar turns amber, and red when it is under two hours away. The expanded rows show `⚠4:12pm` in place of the reset countdown; the collapsed chips and rings keep the reset and add the hit time. It uses the same recent history as the burn rate (at least five minutes of rising usage), so it shows nothing on a fresh session, when usage is flat, or when the limit resets first. It is an estimate: a burst of heavy work or a quiet hour moves it.
 
-**Cache warning.** In the last minute before the prompt cache goes cold, the Cache row turns red and counts down in seconds with the re-write cost (`⚠ expires in 45s · rewrite ~$0.80`). Send any message to warm it again. With `/deck cache 5m` the warning comes after about four minutes of quiet.
+**Cache warning.** In the last minute before the prompt cache goes cold, the Cache row turns red and counts down in seconds with the re-write cost (`⚠ 45s · rewrite ~$0.80`). Send any message to warm it again. With `/deck cache 5m` the warning comes after about four minutes of quiet.
 
 When something needs you (a permission prompt, a question, a reply ending in `?`), its row turns amber, a collapsed Deck opens by itself, and a soft alert plays. Steps tick, finished bars chime, and the last one plays a little fanfare.
 
