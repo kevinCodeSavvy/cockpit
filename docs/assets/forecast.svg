@@ -10,7 +10,7 @@ text{font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;dominant-bas
 .forecast6{animation:kforecast6 14s linear infinite}@keyframes kforecast6{0%,29.90%{opacity:1}29.91%,100%{opacity:0}}
 .forecast7{animation:kforecast7 14s linear infinite}@keyframes kforecast7{0%,30.00%{opacity:0}30.01%,61.90%{opacity:1}61.91%,100%{opacity:0}}
 .forecast8{animation:kforecast8 14s linear infinite}@keyframes kforecast8{0%,62.00%{opacity:0}62.01%,100%{opacity:1}}
-@media (prefers-reduced-motion:reduce){.ph{animation:none;opacity:0}.last{opacity:1}.drain{animation:none;transform:scaleX(.1)}}
+@media (prefers-reduced-motion:reduce){.ph{animation:none;opacity:0}.last{opacity:1}.drain{animation:none;transform:scaleX(.1)}.still{animation:none}}
 </style>
 <rect width="900" height="188" rx="10" fill="#16161a" stroke="#2b2a28"/>
 <text x="20" y="24" fill="#77756f" textLength="140.4" lengthAdjust="spacing" xml:space="preserve" >0: deck ▾ · 3 rows</text>
