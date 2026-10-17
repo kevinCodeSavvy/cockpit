@@ -3,7 +3,7 @@
 ## 0.4.16
 
 - New Tokens row: input and output tokens this session has used, summed across every response including subagents. Toggle with `/deck tokens on|off`.
-- The `/deck collapsed rings` view shows the token total next to the spend ring.
+- The `/deck collapsed rings` view shows the token total next to the spend ring (`T 1.2M tokens`).
 
 ## 0.4.15
 

@@ -1460,7 +1460,7 @@ async function deckView($, e, next) {
           children: [
             desktop ? Svg({ alt: 'tokens', width: 22, height: 22, source: ringSvg(100, STYLE.done.desk, 'tok') }) : Text({ color: STYLE.done.fill, children: ['T'] }),
             Text({ color: STYLE.done.fill, bold: true, wrap: 'truncate', children: [tok.right] }),
-            Text({ color: MUTED, wrap: 'truncate', children: ['tokens · ' + tok.name] }),
+            Text({ color: MUTED, wrap: 'truncate', children: ['tokens'] }),
           ],
         }),
       )

@@ -57,6 +57,7 @@ Mods need Claude Code 2.1.286 or later. To try it from a clone without installin
 | **Context** | Tokens used out of the window | Your session |
 | **5h and 7d limits** | Percent used, a live countdown to each reset, how fast you're burning it (`+12%/h`), and when you'd hit the limit at that pace (`⚠4:12pm`) | Your plan's rate limits, no `/usage` needed |
 | **Spend** | What this session has cost so far; with `/deck cost on` also today and this month, added up across sessions | Your session's cost ledger. Dollars are API-equivalent on a subscription |
+| **Tokens** | Tokens this session has used, split into in (with cache reads and writes) and out, added up across every response including subagents; `/deck tokens off` hides it | The engine's per-response usage |
 | **Cache** | Time left before the prompt cache goes cold and what a cold re-write would cost; red with `⚠ 45s` in the last minute | The last request's time and the context size, priced at the model's cache-write rate |
 | **Model route** | Which model and effort a router picked, and how sure it was | [jev-model-router](#model-routing), if installed |
 | **Clock and weather** | Local time and the weather where you are | Open-Meteo, no key |
@@ -71,7 +72,7 @@ When something needs you (a permission prompt, a question, a reply ending in `?`
 
 - `/deck collapsed chips`: chips with mini bars (the default)
 - `/deck collapsed text`: one plain status line, with the clock and weather at its end
-- `/deck collapsed rings`: a ring per limit with its reset time, plus spend: `◔ 14% 5h · resets 1h7m   ◕ 83% 7d · resets 3h47m   $ $0.10 today · $4.30 mo`
+- `/deck collapsed rings`: a ring per limit with its reset time, plus spend and the token total: `◔ 14% 5h · resets 1h7m   ◕ 83% 7d · resets 3h47m   $ $0.10 today · $4.30 mo   T 1.2M tokens`
 
 ## Styles
 
