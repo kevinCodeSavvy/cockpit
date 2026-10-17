@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.15
+
+- `/deck panel` now stays on. It reopens the panel each session and whenever it goes missing, until you run `/deck panel off`.
+
 ## 0.4.14
 
 - The last-minute cache warning is shorter so the re-write cost is no longer clipped in the bar: `⚠ 45s · rewrite ~$0.80` instead of `⚠ expires in 45s · rewrite ~$0.80`. Nothing else about the warning changed.
