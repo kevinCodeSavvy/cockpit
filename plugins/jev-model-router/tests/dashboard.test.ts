@@ -1,7 +1,7 @@
 import { describe, expect, mock, test, tier } from 'claude-code/testing'
 import type { CommandRunInput, On, SessionStartInput } from 'claude-code'
 
-import { agreementChart, buildDashboard, dayRows, escapeHtml, trendOf } from '../hooks/dashboard.ts'
+import { agreementChart, buildDashboard, confidenceNote, dayRows, escapeHtml, lastCutoffChange, standing, trendOf } from '../hooks/dashboard.ts'
 import type { DashboardInput } from '../hooks/dashboard.ts'
 import { DAY, NEW_STATE } from '../hooks/tune.ts'
 
@@ -67,7 +67,7 @@ test('a floor move is listed on the day it happened', () => {
   expect(rows[0]?.moves).toEqual([])
 })
 
-test('the page leads with a verdict, then today in four cards, the confidence table and the day table', () => {
+test('the page explains itself, gives a plain verdict, then today, the line, the confidence table and the day table', () => {
   const html = buildDashboard(
     input({
       state: { value: 0.35, changedAt: NOW - DAY, frozenUntil: 0 },
@@ -75,15 +75,16 @@ test('the page leads with a verdict, then today in four cards, the confidence ta
     }),
   )
   expect(html.startsWith('<!doctype html>')).toBe(true)
-  expect(html.indexOf('Is Jev getting it right?')).toBeLessThan(html.indexOf('class="cards"'))
-  expect(html).toContain('<b>67%</b> of 3 checked prompts')
-  expect(html).toContain('<div class="big">10</div>')
-  expect(html).toContain('Jev was 80% sure on average')
-  expect(html).toContain('<div class="big">50%</div>')
-  expect(html).toContain('1 of 2 checked')
-  expect(html).toContain('<div class="big">0.35</div>')
+  expect(html.indexOf('What is this?')).toBeLessThan(html.indexOf('class="banner'))
+  expect(html.indexOf('class="banner')).toBeLessThan(html.indexOf('What happened today'))
+  expect(html).toContain('Too early to tell.')
+  expect(html).toContain('So far there are 3.')
+  expect(html).toContain('Jev looked at <b>10</b> prompts. It was not sure about <b>2</b>')
+  expect(html).toContain('double-checked <b>2</b> of Jev')
+  expect(html).toContain('less than <b>35%</b> sure')
   expect(html).toContain('tuned; configured 0.30')
   expect(html).toContain('Under 30% sure')
+  expect(html).toContain('Words used on this page')
   expect(html).toContain('Opus rated 43% higher')
   expect(html).toContain('raise 0.30 → 0.35')
   expect(html).toContain('1970-04-11')
@@ -108,16 +109,46 @@ test('the trend compares the older half of the checks with the newer half', () =
     ...Array.from({ length: 10 }, (_, i) => record(0, 0.8, 'fast', i < 9 ? 'fast' : 'deep')),
   ]
   expect(trendOf(log)).toEqual({ older: 0.5, newer: 0.9 })
-  expect(buildDashboard(input({ log }))).toContain('So it is <b>getting better</b>')
   expect(trendOf(log.slice(0, 5))).toBeNull()
-  expect(buildDashboard(input({ log: log.slice(0, 5) }))).toContain('Too early to say')
 })
 
-test('the verdict says when confidence does and does not separate right from wrong', () => {
+test('the banner says improving, worse, steady or too early, with the numbers', () => {
+  const batch = (back: number, agreeing: number) =>
+    Array.from({ length: 10 }, (_, i) => record(back, 0.8, 'fast', i < agreeing ? 'fast' : 'deep'))
+  const better = standing([...batch(5, 5), ...batch(0, 9)])
+  expect(better.kind).toBe('improving')
+  expect(better.headline).toBe('Jev and Opus agree more often now.')
+  expect(better.because).toContain('<b>90%</b>')
+  expect(better.because).toContain('<b>50%</b>')
+  expect(better.because).toContain('not proof that Jev learned anything')
+  const worse = standing([...batch(5, 9), ...batch(0, 5)])
+  expect(worse.kind).toBe('worse')
+  expect(worse.headline).toBe('Jev and Opus agree less often now.')
+  const steady = standing([...batch(5, 7), ...batch(0, 7)])
+  expect(steady.kind).toBe('steady')
+  expect(steady.headline).toBe('Jev and Opus agree about as often as before.')
+  expect(standing(batch(0, 5).slice(0, 4)).kind).toBe('early')
+  expect(buildDashboard(input({ log: [...batch(5, 5), ...batch(0, 9)] }))).toContain('class="banner improving"')
+})
+
+test('the page says Jev does not learn here, and what the router did to the cutoff last', () => {
+  const html = buildDashboard(
+    input({ trail: [{ at: NOW - DAY, action: 'lower', from: 0.3, to: 0.25, reason: 'Opus <agreed> a lot' }] }),
+  )
+  expect(html).toContain('Does Jev learn from this?')
+  expect(html).toContain('<b>No.</b> Jev is a model run by TypeSafe')
+  expect(html).toContain('on 1970-04-10 the line was lowered from <b>30%</b> to <b>25%</b>. Why: Opus &lt;agreed&gt; a lot.')
+  expect(lastCutoffChange([{ at: NOW, action: 'rollback', from: 0.25, to: 0.3, reason: 'x' }])).toContain('moved back from')
+  expect(lastCutoffChange([])).toBe('The "not sure" line has not been moved yet.')
+  expect(buildDashboard(input())).toContain('has not been moved yet')
+})
+
+test('the confidence note says when "sure" does and does not mean right', () => {
   const useful = [record(0, 0.95, 'fast', 'fast'), record(0, 0.2, 'fast', 'deep')]
-  expect(buildDashboard(input({ log: useful }))).toContain('the surer it is, the more often it is right')
+  expect(confidenceNote(useful)).toContain('the surer Jev says it is, the more often it is right')
   const flat = [record(0, 0.95, 'fast', 'deep'), record(0, 0.2, 'fast', 'deep')]
-  expect(buildDashboard(input({ log: flat }))).toContain('not telling right from wrong yet')
+  expect(confidenceNote(flat)).toContain('does not mean it is right')
+  expect(confidenceNote([record(0, 0.95, 'fast', 'fast')])).toBeNull()
 })
 
 test('the page is self-contained: no scripts, no network, and no prompt text', () => {
@@ -138,7 +169,7 @@ test('generated text is escaped before it goes into the page', () => {
 
 test('an empty store still produces a readable page', () => {
   const html = buildDashboard(input({ stats: {}, log: [], trail: [] }))
-  expect(html).toContain('No shadow records yet.')
+  expect(html).toContain('No double-checks yet.')
   expect(html).toContain('No tuning changes yet.')
   expect(html).toContain('as configured, not tuned')
 })
@@ -195,7 +226,7 @@ describe('/jev-dashboard', () => {
     const path = '/Users/kev/.claude/jev-model-router/dashboard.html'
     expect(w.written.length).toBe(1)
     expect(w.written[0]?.path).toBe(path)
-    expect(w.written[0]?.text).toContain('<div class="big">7</div>')
+    expect(w.written[0]?.text).toContain('Jev looked at <b>7</b> prompts')
     expect(w.ran).toContainEqual(['open', path])
     expect(result.text).toBe(`Dashboard opened in your browser: ${path}`)
   })

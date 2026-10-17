@@ -128,16 +128,17 @@ Each record holds a redacted 200-character summary of the prompt (credentials, l
 
 `/jev-dashboard` writes one self-contained HTML page (inline CSS, no scripts, no network, no prompt text) to `~/.claude/jev-model-router/dashboard.html` and opens it in the default browser (`open` on macOS, `xdg-open` on Linux). `/jev-dashboard no-open` only writes it. The page is a snapshot; run the command again to refresh.
 
-The page opens with one question, "Is Jev getting it right?", and answers it in three sentences: how often Jev picked the same tier as Opus, whether it agrees more often when it says it is sure (70% or more against under 50%), and whether it is improving, by comparing the older half of the checked prompts with the newer half (from 0.9.0; it says "too early to say" under 20 checked prompts).
+The page opens with a short "What is this?" box, then a banner that answers "How is Jev doing?": Jev and Opus agree more often now, less often, about as often as before, or "too early to tell". It compares the older half of the checked prompts with the newer half (from 0.9.0) and needs 20 or more checked prompts and a 5-point change to call it. The wording is deliberate: more agreement is not proof that Jev learned anything, because Jev is TypeSafe's model and this router never trains it.
 
-Below that, a line graph plots the share of checked prompts where Opus agreed with Jev for each day with checks, oldest on the left, so a rising line means Jev is improving (from 0.9.1; it needs two days with checks, and hovering a point shows that day's counts).
+Below that, a line graph plots the share of checked prompts where Opus agreed with Jev for each day with checks, oldest on the left, so a rising line means Jev and Opus agree more often (from 0.9.1; it needs two days with checks, and hovering a point shows that day's counts).
 
-Then:
+Then, in order:
 
-- Four cards for today: prompts, how often Jev matched Opus, prompts sent to Opus as unsure, and the unsure cutoff in force with a note on whether it was tuned.
-- "Is Jev right when it is sure?": checked prompts grouped by Jev's stated confidence, in plain bands such as "Under 30% sure" and "90% or more sure", each with the share Opus agreed with and a bar.
-- "Day by day": the last 14 UTC days with prompts, those sent to Opus as unsure, checked, the share Opus agreed with, and any cutoff change. Days with no activity are hidden.
-- Collapsed by default: model switches (the newest 15), cutoff changes (the last ten) and a short "How to read this".
+- "What happened today": plain sentences with the counts, and where the "not sure" line sits now.
+- "Does Jev know when it is right?": checked prompts grouped by Jev's stated confidence, in bands such as "Under 30% sure" and "90% or more sure", each with the share Opus agreed with and a bar, and one sentence on whether "sure" means right.
+- "Every day": the last 14 UTC days with prompts, those Jev was not sure about, those double-checked, the share Opus agreed with, and any change to the line. Days with no activity are hidden.
+- "Does Jev learn from this?" (from 0.9.2): says plainly that it does not, that only the router's own "not sure" line adjusts itself, and what that line last did and why.
+- A glossary, open by default. Collapsed: model switches (the newest 15), changes to the "not sure" line (the last ten) and a short small print.
 
 Prompt counts come from per-day counters kept since 0.6.0 and cover prompts where Jev reported a confidence; the rest comes from the shadow log, which keeps the newest 300 records, so older days can be partial. "Opus agreed" is a second opinion, not proof that a cheaper model would have failed.
 

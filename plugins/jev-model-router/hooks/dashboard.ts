@@ -130,37 +130,52 @@ export function trendOf(log: readonly ShadowRecord[]): { older: number; newer: n
   return { older: agreeRate(compared.slice(0, mid)) as number, newer: agreeRate(compared.slice(mid)) as number }
 }
 
-/** The sentences at the top of the page. */
-function verdict(log: readonly ShadowRecord[]): string[] {
-  const compared = log.filter((r) => r.agree !== null)
-  const overall = agreeRate(log)
-  if (overall === null) return ['Not enough checks yet. Opus double-checks some answers as you work; the verdict appears once it has.']
-  const lines = [`Jev picked the same tier as Opus on <b>${pct(overall)}</b> of ${compared.length} checked prompts.`]
+export type StandingKind = 'improving' | 'steady' | 'worse' | 'early'
 
-  const sure = agreeRate(log.filter((r) => (r.jev.confidence ?? 0) >= 0.7))
-  const unsure = agreeRate(log.filter((r) => r.jev.confidence !== null && r.jev.confidence < 0.5))
-  if (sure !== null && unsure !== null) {
-    const worthTrusting = sure - unsure >= 0.15
-    lines.push(
-      `When Jev was 70% sure or more it agreed <b>${pct(sure)}</b> of the time; when it was under 50% sure, <b>${pct(unsure)}</b>. ${
-        worthTrusting
-          ? 'Its confidence is a useful signal: the surer it is, the more often it is right.'
-          : 'Its confidence is not telling right from wrong yet.'
-      }`,
-    )
-  }
+export interface Standing {
+  kind: StandingKind
+  headline: string
+  because: string
+}
 
+/** The one-line answer to "is Jev improving?", with the numbers behind it. */
+export function standing(log: readonly ShadowRecord[]): Standing {
+  const checked = log.filter((r) => r.agree !== null).length
   const trend = trendOf(log)
   if (trend === null) {
-    lines.push(`Is it improving? Too early to say; this needs ${TREND_MIN} or more checked prompts.`)
-  } else {
-    const diff = Math.round(100 * (trend.newer - trend.older))
-    const word = diff >= 5 ? 'getting better' : diff <= -5 ? 'getting worse' : 'about the same'
-    lines.push(
-      `Is it improving? Older half of the checks: ${pct(trend.older)} agreed. Newer half: ${pct(trend.newer)}. So it is <b>${word}</b>.`,
-    )
+    return {
+      kind: 'early',
+      headline: 'Too early to tell.',
+      because: `To compare, I need at least ${TREND_MIN} double-checked prompts. So far there ${checked === 1 ? 'is 1' : `are ${checked}`}.`,
+    }
   }
-  return lines
+  const diff = Math.round(100 * (trend.newer - trend.older))
+  const numbers = `Recently Jev picked the same model as Opus <b>${pct(trend.newer)}</b> of the time. Before that it was <b>${pct(trend.older)}</b>. That is not proof that Jev learned anything; see "Does Jev learn from this?" below.`
+  if (diff >= 5) return { kind: 'improving', headline: 'Jev and Opus agree more often now.', because: numbers }
+  if (diff <= -5) return { kind: 'worse', headline: 'Jev and Opus agree less often now.', because: numbers }
+  return { kind: 'steady', headline: 'Jev and Opus agree about as often as before.', because: numbers }
+}
+
+/** One sentence on whether Jev's "how sure am I" is worth trusting, or null when there is not enough to say. */
+export function confidenceNote(log: readonly ShadowRecord[]): string | null {
+  const sure = agreeRate(log.filter((r) => (r.jev.confidence ?? 0) >= 0.7))
+  const unsure = agreeRate(log.filter((r) => r.jev.confidence !== null && r.jev.confidence < 0.5))
+  if (sure === null || unsure === null) return null
+  const good = sure - unsure >= 0.15
+  return `When Jev says it is 70% sure or more, Opus agrees <b>${pct(sure)}</b> of the time. When Jev is under 50% sure, only <b>${pct(unsure)}</b>. ${
+    good
+      ? 'That is healthy: the surer Jev says it is, the more often it is right.'
+      : 'That is not healthy yet: Jev saying it is sure does not mean it is right.'
+  }`
+}
+
+/** What the router last did to the "not sure" line, in plain words, or a note that it has not moved. */
+export function lastCutoffChange(trail: readonly AuditEntry[]): string {
+  const last = trail[trail.length - 1]
+  if (last === undefined) return 'The "not sure" line has not been moved yet.'
+  const date = new Date(last.at).toISOString().slice(0, 10)
+  const verb = last.action === 'rollback' ? 'moved back' : last.action === 'raise' ? 'raised' : 'lowered'
+  return `The last change: on ${date} the line was ${verb} from <b>${pct(last.from)}</b> to <b>${pct(last.to)}</b>. Why: ${escapeHtml(last.reason)}.`
 }
 
 /** Chart size and margins, in SVG units. */
@@ -214,11 +229,12 @@ body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-app
 main{max-width:860px;margin:0 auto;padding:24px 16px 48px}
 h1{font-size:22px;margin:0 0 4px}h2{font-size:16px;margin:32px 0 4px}
 .sub{color:var(--dim);font-size:13px;margin:0 0 8px}
-.verdict{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--blue);border-radius:10px;padding:14px 16px;margin-top:20px}
-.verdict p{margin:0 0 6px}.verdict p:last-child{margin:0}
-.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}
-.big{font-size:26px;font-weight:600;line-height:1.2}
+h1{font-size:24px}
+.intro{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 16px;margin-top:16px;font-size:14px}
+.banner{border-radius:10px;padding:16px 18px;margin-top:16px;border:2px solid var(--line);background:var(--card)}
+.banner .head{font-size:24px;font-weight:700;line-height:1.25}.banner p{margin:6px 0 0}
+.banner.improving{border-color:#2f9e5b}.banner.worse{border-color:#d1453b}.banner.steady{border-color:var(--amber)}.banner.early{border-style:dashed}
+.today{font-size:16px;margin:8px 0}
 .lbl{font-size:13px;margin-top:2px}.note{font-size:12px;color:var(--dim);margin-top:4px}
 table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:13px}
 th,td{padding:7px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
@@ -229,7 +245,6 @@ tr:last-child td{border-bottom:0}td.z{color:var(--dim)}td.moves{text-align:left;
 ul{margin:6px 0;padding-left:20px;font-size:13px}li{margin:3px 0}
 .chart{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:16px}.chart svg{width:100%;height:auto;display:block}.line{fill:none;stroke:var(--blue);stroke-width:2.5}.dot{fill:var(--blue)}.grid{stroke:var(--line)}.axis{fill:var(--dim);font-size:11px}
 details{margin-top:28px}summary{cursor:pointer;font-size:16px;font-weight:600}
-@media (max-width:760px){.cards{grid-template-columns:1fr 1fr}}
 `
 
 /** A percentage with a bar as long as the percentage. */
@@ -301,59 +316,74 @@ export function buildDashboard(input: DashboardInput): string {
     .join('\n')
 
   const generated = new Date(input.now).toISOString().slice(0, 16).replace('T', ' ')
-  const todayRate = share(today.agree, today.agree + today.disagree)
+  const state = standing(input.log)
+  const checkedToday = today.agree + today.disagree
+  const todaySentence =
+    today.prompts === 0 && today.shadow === 0
+      ? 'Nothing yet today.'
+      : `Jev looked at <b>${today.prompts}</b> prompts. It was not sure about <b>${today.escalated}</b>, so those went to Opus. Opus also double-checked <b>${checkedToday}</b> of Jev's picks and chose the same as Jev on <b>${today.agree}</b>.`
 
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Jev Router Stats</title><style>${CSS}</style></head>
 <body><main>
-<h1>Is Jev getting it right?</h1>
-<p class="sub">Snapshot at ${generated} UTC. Type /jev-dashboard again to refresh. Days are UTC.</p>
+<h1>How is Jev doing?</h1>
+<p class="sub">Updated ${generated} UTC. Type /jev-dashboard again to refresh. Days are UTC.</p>
 
-<div class="verdict">
-${verdict(input.log)
-  .map((line) => `<p>${line}</p>`)
-  .join('\n')}
+<div class="intro"><b>What is this?</b> Jev is a small AI that reads each thing you ask Claude and picks how strong a Claude model to use: small and cheap for easy jobs, big and costly for hard ones. To check Jev, the strongest model (Opus) sometimes picks too. If Opus and Jev pick the same, Jev did well. The more often they match, the better Jev is.</div>
+
+<div class="banner ${state.kind}">
+<div class="head">${state.headline}</div>
+<p>${state.because}</p>
 </div>
 
+<h2>What happened today</h2>
+<p class="today">${todaySentence}</p>
+<p class="sub">Right now, when Jev is less than <b>${pct(floor)}</b> sure, the router does not trust it and uses Opus instead (${escapeHtml(floorNote)}).</p>
+
+<h2>Day by day: how often Opus agreed with Jev</h2>
 <div class="chart">
-<div class="lbl">Share of checked prompts where Opus agreed with Jev, by day. Going up means Jev is improving.</div>
 ${agreementChart(rows)}
+<div class="lbl">Each dot is one day. Higher is better. A line that goes up means Jev and Opus agree more often.</div>
 </div>
 
-<div class="cards">
-<div class="card"><div class="big">${today.prompts}</div><div class="lbl">prompts today</div><div class="note">${
-    today.avgConfidence === null ? 'no confidence reported' : `Jev was ${pct(today.avgConfidence)} sure on average`
-  }</div></div>
-<div class="card"><div class="big">${todayRate}</div><div class="lbl">Jev matched Opus today</div><div class="note">${today.agree} of ${
-    today.agree + today.disagree
-  } checked</div></div>
-<div class="card"><div class="big">${today.escalated}</div><div class="lbl">sent to Opus as unsure</div><div class="note">${share(
-    today.escalated,
-    today.prompts,
-  )} of today's prompts</div></div>
-<div class="card"><div class="big">${floor.toFixed(2)}</div><div class="lbl">unsure cutoff</div><div class="note">below this Jev's answer goes to Opus; ${escapeHtml(
-    floorNote,
-  )}</div></div>
-</div>
-
-<h2>Is Jev right when it is sure?</h2>
-<p class="sub">Each row groups checked prompts by how sure Jev said it was. A good Jev agrees more often further down.</p>
+<h2>Does Jev know when it is right?</h2>
+<p class="sub">${confidenceNote(input.log) ?? 'Not enough double-checks yet to say.'}</p>
 <div class="wrap"><table>
-<tr><th>Jev said</th><th>Checked</th><th>Opus agreed</th></tr>
-${buckets || '<tr><td colspan="3">No shadow records yet.</td></tr>'}
+<tr><th>How sure Jev said it was</th><th>Prompts double-checked</th><th>Opus agreed</th></tr>
+${buckets || '<tr><td colspan="3">No double-checks yet.</td></tr>'}
 </table></div>
+<p class="sub">Healthy looks like this: the more sure Jev is, the longer the bar.</p>
 
-<h2>Day by day</h2>
-<p class="sub">${quiet > 0 ? `${quiet} of the last ${DASHBOARD_DAYS} days had no activity and are hidden.` : `Last ${DASHBOARD_DAYS} days.`}</p>
+<h2>Every day</h2>
+<p class="sub">${quiet > 0 ? `${quiet} of the last ${DASHBOARD_DAYS} days had no activity and are hidden.` : `The last ${DASHBOARD_DAYS} days.`}</p>
 <div class="wrap"><table>
-<tr><th>Day</th><th>Prompts</th><th>Sent to Opus as unsure</th><th>Checked</th><th>Opus agreed</th><th>Cutoff changes</th></tr>
+<tr><th>Day</th><th>Prompts</th><th>Jev was not sure</th><th>Double-checked by Opus</th><th>Opus agreed</th><th>"Not sure" line changed</th></tr>
 ${dayTable || '<tr><td colspan="6">No activity yet.</td></tr>'}
 </table></div>
 
+<h2>Does Jev learn from this?</h2>
+<p class="sub"><b>No.</b> Jev is a model run by TypeSafe. This router sends it prompts and reads back its pick; nothing from Opus's double-checks is sent back to teach it.</p>
+<p class="sub">The one thing that adjusts itself is the router's own "not sure" line (now ${pct(floor)}). When Opus's double-checks show the line is in the wrong place, the router moves it a little, at most once a day. That changes which prompts get sent to Opus. It does not change what Jev picks.</p>
+<p class="sub">${lastCutoffChange(input.trail)}</p>
+<p class="sub">So if Jev and Opus agree more often over time, it is because TypeSafe updated the model, or your work changed. It is not because the router taught Jev.</p>
+
+<details open>
+<summary>Words used on this page</summary>
+<ul>
+<li><b>Jev</b>: the small AI that picks which Claude model each prompt gets.</li>
+<li><b>Opus</b>: the strongest Claude model. It double-checks some of Jev's picks.</li>
+<li><b>Fast, balanced, deep</b>: small and cheap, in the middle, and big and costly. Jev picks one of the three.</li>
+<li><b>Sure %</b>: how confident Jev says it is in its pick.</li>
+<li><b>Not sure</b>: Jev was less sure than the "not sure" line, so that prompt went to Opus.</li>
+<li><b>Double-checked</b>: Opus was also asked, in the background, to see if it picks the same. Opus checks every "not sure" prompt (up to an hourly limit) and a sample of the rest.</li>
+<li><b>Agreed</b>: Opus picked the same model as Jev. It is a second opinion, not proof that Jev was wrong when they differ.</li>
+</ul>
+</details>
+
 <details>
-<summary>Model switches (${counts.allowed} switched, ${counts.kept} kept)</summary>
-<p class="sub">${switches.length === 0 ? 'None recorded yet.' : `Newest ${Math.min(SWITCH_ROWS, switches.length)} shown. "Kept" means switching would have cost more once the cold cache was counted.`}</p>
+<summary>Times the router changed your model (${counts.allowed} switched, ${counts.kept} kept)</summary>
+<p class="sub">${switches.length === 0 ? 'None recorded yet.' : `Newest ${Math.min(SWITCH_ROWS, switches.length)} shown. "Kept" means the router stayed on the current model because switching would have cost more, since the new model would have to re-read the whole chat from scratch.`}</p>
 <div class="wrap"><table>
 <tr><th>When (UTC)</th><th>Move</th><th>Result</th><th>Why</th></tr>
 ${switchRows || '<tr><td colspan="4">No main-loop switch has been judged yet.</td></tr>'}
@@ -361,18 +391,18 @@ ${switchRows || '<tr><td colspan="4">No main-loop switch has been judged yet.</t
 </details>
 
 <details>
-<summary>Cutoff changes</summary>
+<summary>Times the "not sure" line was moved</summary>
+<p class="sub">The router nudges the line up or down by itself when the double-checks show it is in the wrong place.</p>
 <ul>
 ${trailList}
 </ul>
 </details>
 
 <details>
-<summary>How to read this</summary>
+<summary>Small print</summary>
 <ul>
-<li>"Opus agreed" means Opus picked the same tier Jev did. It is a second opinion, not proof a cheaper model would have failed.</li>
-<li>Opus checks every unsure prompt (up to the hourly cap) and a sample of the rest. The log keeps the newest ${SHADOW_CAP} checks, so older days can be partial.</li>
-<li>Prompt counts only cover prompts where Jev reported a confidence.</li>
+<li>The page keeps the newest ${SHADOW_CAP} double-checks, so older days can look thin.</li>
+<li>Prompt counts only cover prompts where Jev reported how sure it was.</li>
 </ul>
 </details>
 </main></body></html>
