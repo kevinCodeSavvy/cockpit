@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.16
+
+- New Tokens row: input and output tokens this session has used, summed across every response including subagents. Toggle with `/deck tokens on|off`.
+- The `/deck collapsed rings` view shows the token total next to the spend ring.
+
 ## 0.4.15
 
 - `/deck panel` now stays on. It reopens the panel each session and whenever it goes missing, until you run `/deck panel off`.

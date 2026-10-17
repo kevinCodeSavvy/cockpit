@@ -10,10 +10,10 @@ import { TERMINAL_STYLES, TERMINAL_STYLE_NAMES, terminalBar, terminalMini } from
 import { DESKTOP_STYLES, DESKTOP_STYLE_NAMES, desktopTrack, stripsSvg, stripsHeight } from './styles-desktop.js'
 import { createPet, stepPet, petX, petLaneSvg, petFrame, PET_RASTER } from './pet.js'
 
-const SECTIONS = ['plans', 'agents', 'context', 'limits', 'spend', 'cache', 'route', 'pet', 'clock', 'weather']
+const SECTIONS = ['plans', 'agents', 'context', 'limits', 'spend', 'tokens', 'cache', 'route', 'pet', 'clock', 'weather']
 
 const DEFAULT_PREFS = {
-  show: { plans: true, agents: true, context: true, limits: true, spend: true, cache: true, route: true, pet: true, clock: true, weather: false },
+  show: { plans: true, agents: true, context: true, limits: true, spend: true, tokens: true, cache: true, route: true, pet: true, clock: true, weather: false },
   always: true, // start every session expanded, whatever the last one left behind
   cacheTtl: '1h', // how long the prompt cache lives: '1h' (subscription) or '5m' (API key)
   style: { terminal: 'solid', desktop: 'pixel' },
@@ -37,7 +37,7 @@ const FOLD_MS = 5000
 const MAX_STRIPS = 4
 const ASK_DELAY_MS = 600
 const TRACK_H = 22
-const VERSION = '0.4.15' // keep in step with .claude-plugin/plugin.json (a test checks)
+const VERSION = '0.4.16' // keep in step with .claude-plugin/plugin.json (a test checks)
 const RIGHT_W = 92
 const TITLE_MAX_CH = 22 // a long prompt as a bar title would squeeze every track
 const TITLE_MAX_PX = 160
@@ -827,6 +827,7 @@ function collectRows(now) {
     }
   }
   if (prefs.show.spend) rows.push(spendRow())
+  if (prefs.show.tokens) rows.push(tokensRow())
   if (prefs.show.cache) rows.push(cacheRow(now))
   return rows
 }
@@ -847,6 +848,28 @@ function spendRow() {
     right: today,
     short: fmtUsd(usd),
     section: 'spend',
+    hist: [],
+    rate: '',
+  }
+}
+
+// tokens this session has used, summed from every response (subagents included) since the session began
+let tokensUsed = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }
+function tokensRow() {
+  const t = tokensUsed
+  const total = t.input + t.output + t.cacheRead + t.cacheWrite
+  return {
+    id: 'tokens',
+    kind: 'meter',
+    style: 'done',
+    title: 'Tokens',
+    pct: 0,
+    marks: [],
+    name: '↓' + fmtK(t.input + t.cacheRead + t.cacheWrite) + ' in · ↑' + fmtK(t.output) + ' out',
+    count: '',
+    right: fmtK(total),
+    short: fmtK(total) + ' tok',
+    section: 'tokens',
     hist: [],
     rate: '',
   }
@@ -1046,7 +1069,9 @@ function ringSvg(pct, color, icon) {
   const glyph =
     icon === 'usd'
       ? `<text x="11" y="15" text-anchor="middle" style="font:600 10px ui-sans-serif,system-ui,sans-serif;fill:${color}">$</text>`
-      : icon === 'week'
+      : icon === 'tok'
+        ? `<text x="11" y="14.5" text-anchor="middle" style="font:600 8px ui-sans-serif,system-ui,sans-serif;fill:${color}">T</text>`
+        : icon === 'week'
         ? `<rect x="7.2" y="7.6" width="7.6" height="7" rx="1.2" fill="none" stroke="${color}" stroke-width="1.3"/><rect x="7.2" y="7.6" width="7.6" height="2" fill="${color}"/>`
         : `<path d="M11 7.2V11l2.4 1.6" fill="none" stroke="${color}" stroke-width="1.4" stroke-linecap="round"/>`
   return (
@@ -1388,7 +1413,7 @@ async function deckView($, e, next) {
   const extrasText = Box({ flexShrink: 0, children: [Text({ color: MUTED, children: [extras.join('  ·  ')] })] })
   const spacer = Box({ flexGrow: 1, children: [] })
 
-  // ----- collapsed, rings: a ring per limit, its reset, and spend -----
+  // ----- collapsed, rings: a ring per limit, its reset, spend and tokens -----
   if ((!open || !rows.length) && prefs.collapsed === 'rings') {
     const items = []
     const ask = rows.find((r) => r.state === 'needs_input')
@@ -1420,6 +1445,22 @@ async function deckView($, e, next) {
             desktop ? Svg({ alt: 'spend', width: 22, height: 22, source: ringSvg(100, STYLE.done.desk, 'usd') }) : Text({ color: STYLE.done.fill, children: ['$'] }),
             Text({ color: STYLE.done.fill, bold: true, wrap: 'truncate', children: [fmtUsd(spend.dayUsd)] }),
             Text({ color: MUTED, wrap: 'truncate', children: ['today · ' + fmtUsd(spend.monthUsd) + ' this month'] }),
+          ],
+        }),
+      )
+    }
+    const tok = rows.find((r) => r.id === 'tokens')
+    if (tok) {
+      items.push(
+        Box({
+          flexDirection: 'row',
+          flexShrink: 0,
+          columnGap: 1,
+          alignItems: 'center',
+          children: [
+            desktop ? Svg({ alt: 'tokens', width: 22, height: 22, source: ringSvg(100, STYLE.done.desk, 'tok') }) : Text({ color: STYLE.done.fill, children: ['T'] }),
+            Text({ color: STYLE.done.fill, bold: true, wrap: 'truncate', children: [tok.right] }),
+            Text({ color: MUTED, wrap: 'truncate', children: ['tokens · ' + tok.name] }),
           ],
         }),
       )
@@ -1698,6 +1739,7 @@ export function register(on) {
   on('session.end', async ($, e, next) => {
     if (e.reason === 'clear') {
       cacheAt = 0
+      tokensUsed = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }
       bars.clear()
       agents.clear()
       tasks.clear()
@@ -1871,7 +1913,16 @@ export function register(on) {
   on('turn.step', async function* ($, e, next) {
     if (!e.agentId && e.index === 0) seen = { model: e.model, effort: typeof e.effort === 'string' ? e.effort : '' }
     if (!e.agentId) cacheAt = Date.now()
-    return yield* next(e)
+    const r = yield* next(e)
+    const u = r?.usage
+    if (u) {
+      tokensUsed.input += u.input_tokens ?? 0
+      tokensUsed.output += u.output_tokens ?? 0
+      tokensUsed.cacheRead += u.cache_read_input_tokens ?? 0
+      tokensUsed.cacheWrite += u.cache_creation_input_tokens ?? 0
+      if (prefs.show.tokens) $.ui.invalidate('ui.render')
+    }
+    return r
   })
 
   // a router's one-line status: the HUD shows it as a row instead
