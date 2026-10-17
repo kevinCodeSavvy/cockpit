@@ -18,6 +18,7 @@ const DEFAULT_PREFS = {
   cacheTtl: '1h', // how long the prompt cache lives: '1h' (subscription) or '5m' (API key)
   style: { terminal: 'solid', desktop: 'pixel' },
   open: false,
+  panel: false, // keep Deck's panel open: reopen it each session and whenever it goes missing
   auto: true,
   sound: true,
   quiet: true,
@@ -1124,6 +1125,14 @@ function setOpen($, want) {
   $.ui.invalidate('ui.render')
 }
 
+// the pane is the engine's, and it can go missing (a new session, a narrow window): reopen it
+async function ensurePanel($) {
+  try {
+    const up = (await $.ui.panes()).some((p) => p.id === 'deck-panel' && p.isPlaced)
+    if (!up) await $.ui.open({ id: 'deck-panel', title: 'Deck' })
+  } catch {}
+}
+
 async function savePrefs($) {
   await $.store.set('prefs', prefs)
 }
@@ -1646,6 +1655,7 @@ export function register(on) {
       prefs.open = true
       await savePrefs($)
     }
+    if (prefs.panel) await ensurePanel($)
     await refreshUsage($)
     await readSessionModel($)
     const savedHist = await $.store.get('hist')
@@ -1668,6 +1678,7 @@ export function register(on) {
       const ticking = secondTick && (prefs.show.clock || rows.some((r) => r.kind === 'meter' || r.strips))
       if (petMoved || terminalAnim || ticking) $.ui.invalidate('ui.render')
       if (frame % 14 === 0) await syncAgents($)
+      if (prefs.panel && frame % 20 === 0) await ensurePanel($)
       if (frame % 400 === 0) await refreshUsage($)
       else if (frame % 100 === 0) await noteUsage($)
       if (frame % 8000 === 0) await refreshWeather($)
@@ -1704,9 +1715,13 @@ export function register(on) {
       return { text: want ? 'Deck expanded.' : 'Deck collapsed.' }
     }
     else if (a === 'panel' && (!b || b === 'on')) {
+      prefs.panel = true
+      await savePrefs($)
       await $.ui.open({ id: 'deck-panel', title: 'Deck' })
-      return { text: 'Deck opened in a panel.' }
+      return { text: 'Deck opened in a panel and will stay open (/deck panel off to stop).' }
     } else if (a === 'panel' && b === 'off') {
+      prefs.panel = false
+      await savePrefs($)
       await $.ui.close({ id: 'deck-panel' })
       return { text: 'Deck panel closed.' }
     }

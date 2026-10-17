@@ -105,7 +105,7 @@ On Desktop it's an animated SVG. In the terminal it's drawn as a picture, so it 
 | `/deck style <name>` | `segments`, `line`, `solid`, `dots`, `pixel`, `spark` |
 | `/deck <section> on\|off` | `plans agents context limits spend cache route pet clock weather all` |
 | `/deck city <name>` | Weather city |
-| `/deck panel [off]` | Open Deck in a panel of its own, always expanded |
+| `/deck panel [off]` | Open Deck in a panel of its own, always expanded; it stays on, reopening each session and whenever it goes missing, until `off` |
 | `/deck version` | Show which Deck version is running |
 | `/deck size compact\|roomy` | Row spacing on Desktop (compact is the default) |
 | `/deck collapsed chips\|text\|rings` | Collapsed look: chips with mini bars, one plain line, or limit rings |
