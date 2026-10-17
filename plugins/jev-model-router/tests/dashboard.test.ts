@@ -1,7 +1,7 @@
 import { describe, expect, mock, test, tier } from 'claude-code/testing'
 import type { CommandRunInput, On, SessionStartInput } from 'claude-code'
 
-import { buildDashboard, dayRows, escapeHtml } from '../hooks/dashboard.ts'
+import { buildDashboard, dayRows, escapeHtml, trendOf } from '../hooks/dashboard.ts'
 import type { DashboardInput } from '../hooks/dashboard.ts'
 import { DAY, NEW_STATE } from '../hooks/tune.ts'
 
@@ -67,7 +67,7 @@ test('a floor move is listed on the day it happened', () => {
   expect(rows[0]?.moves).toEqual([])
 })
 
-test('the page is a complete document with the five steps, the day table and the audit trail', () => {
+test('the page leads with a verdict, then today in four cards, the confidence table and the day table', () => {
   const html = buildDashboard(
     input({
       state: { value: 0.35, changedAt: NOW - DAY, frozenUntil: 0 },
@@ -75,17 +75,38 @@ test('the page is a complete document with the five steps, the day table and the
     }),
   )
   expect(html.startsWith('<!doctype html>')).toBe(true)
-  for (const step of ['1 · Jev rates', '2 · Router decides', '3 · Shadow check', '4 · Opus vs Jev', '5 · Auto-tune']) {
-    expect(html).toContain(step)
-  }
+  expect(html.indexOf('Is Jev getting it right?')).toBeLessThan(html.indexOf('class="cards"'))
+  expect(html).toContain('<b>67%</b> of 3 checked prompts')
   expect(html).toContain('<div class="big">10</div>')
-  expect(html).toContain('avg confidence 0.80')
-  expect(html).toContain('<div class="big">1 / 1</div>')
+  expect(html).toContain('Jev was 80% sure on average')
+  expect(html).toContain('<div class="big">50%</div>')
+  expect(html).toContain('1 of 2 checked')
   expect(html).toContain('<div class="big">0.35</div>')
   expect(html).toContain('tuned; configured 0.30')
+  expect(html).toContain('Under 30% sure')
   expect(html).toContain('Opus rated 43% higher')
   expect(html).toContain('raise 0.30 → 0.35')
   expect(html).toContain('1970-04-11')
+  // Days with nothing in them are hidden, and the page says how many.
+  expect(html).toContain('12 of the last 14 days had no activity')
+})
+
+test('the trend compares the older half of the checks with the newer half', () => {
+  const log = [
+    ...Array.from({ length: 10 }, (_, i) => record(5, 0.8, 'fast', i < 5 ? 'fast' : 'deep')),
+    ...Array.from({ length: 10 }, (_, i) => record(0, 0.8, 'fast', i < 9 ? 'fast' : 'deep')),
+  ]
+  expect(trendOf(log)).toEqual({ older: 0.5, newer: 0.9 })
+  expect(buildDashboard(input({ log }))).toContain('So it is <b>getting better</b>')
+  expect(trendOf(log.slice(0, 5))).toBeNull()
+  expect(buildDashboard(input({ log: log.slice(0, 5) }))).toContain('Too early to say')
+})
+
+test('the verdict says when confidence does and does not separate right from wrong', () => {
+  const useful = [record(0, 0.95, 'fast', 'fast'), record(0, 0.2, 'fast', 'deep')]
+  expect(buildDashboard(input({ log: useful }))).toContain('the surer it is, the more often it is right')
+  const flat = [record(0, 0.95, 'fast', 'deep'), record(0, 0.2, 'fast', 'deep')]
+  expect(buildDashboard(input({ log: flat }))).toContain('not telling right from wrong yet')
 })
 
 test('the page is self-contained: no scripts, no network, and no prompt text', () => {
