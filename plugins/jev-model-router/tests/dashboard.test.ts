@@ -1,7 +1,7 @@
 import { describe, expect, mock, test, tier } from 'claude-code/testing'
 import type { CommandRunInput, On, SessionStartInput } from 'claude-code'
 
-import { buildDashboard, dayRows, escapeHtml, trendOf } from '../hooks/dashboard.ts'
+import { agreementChart, buildDashboard, dayRows, escapeHtml, trendOf } from '../hooks/dashboard.ts'
 import type { DashboardInput } from '../hooks/dashboard.ts'
 import { DAY, NEW_STATE } from '../hooks/tune.ts'
 
@@ -89,6 +89,17 @@ test('the page leads with a verdict, then today in four cards, the confidence ta
   expect(html).toContain('1970-04-11')
   // Days with nothing in them are hidden, and the page says how many.
   expect(html).toContain('12 of the last 14 days had no activity')
+})
+
+test('the agreement line has one point per day with checks, oldest first, and waits for two days', () => {
+  const log = [record(2, 0.8, 'fast', 'fast'), record(2, 0.8, 'fast', 'deep'), record(0, 0.8, 'fast', 'fast')]
+  const svg = agreementChart(dayRows(input({ log })))
+  expect(svg.match(/<circle/g)?.length).toBe(2)
+  expect(svg).toContain('1970-04-09: 50% agreed (1 of 2)')
+  expect(svg).toContain('1970-04-11: 100% agreed (1 of 1)')
+  expect(svg.indexOf('04-09')).toBeLessThan(svg.indexOf('04-11'))
+  expect(agreementChart(dayRows(input({ log: [record(0, 0.8, 'fast', 'fast')] })))).toContain('appears once two different days')
+  expect(buildDashboard(input({ log }))).toContain('<polyline')
 })
 
 test('the trend compares the older half of the checks with the newer half', () => {

@@ -130,7 +130,9 @@ Each record holds a redacted 200-character summary of the prompt (credentials, l
 
 The page opens with one question, "Is Jev getting it right?", and answers it in three sentences: how often Jev picked the same tier as Opus, whether it agrees more often when it says it is sure (70% or more against under 50%), and whether it is improving, by comparing the older half of the checked prompts with the newer half (from 0.9.0; it says "too early to say" under 20 checked prompts).
 
-Below that:
+Below that, a line graph plots the share of checked prompts where Opus agreed with Jev for each day with checks, oldest on the left, so a rising line means Jev is improving (from 0.9.1; it needs two days with checks, and hovering a point shows that day's counts).
+
+Then:
 
 - Four cards for today: prompts, how often Jev matched Opus, prompts sent to Opus as unsure, and the unsure cutoff in force with a note on whether it was tuned.
 - "Is Jev right when it is sure?": checked prompts grouped by Jev's stated confidence, in plain bands such as "Under 30% sure" and "90% or more sure", each with the share Opus agreed with and a bar.

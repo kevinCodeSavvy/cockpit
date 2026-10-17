@@ -163,6 +163,49 @@ function verdict(log: readonly ShadowRecord[]): string[] {
   return lines
 }
 
+/** Chart size and margins, in SVG units. */
+const CHART = { w: 640, h: 180, left: 40, right: 16, top: 12, bottom: 28 }
+
+/**
+ * Daily agreement with Opus as an inline SVG line, oldest day on the left, or
+ * a one-line note when fewer than two days have checks. A line rising means
+ * Jev is improving. Each point's tooltip gives its day and counts.
+ */
+export function agreementChart(rows: readonly DayRow[]): string {
+  const days = rows
+    .filter((r) => r.agree + r.disagree > 0)
+    .reverse()
+    .map((r) => ({ date: r.date, agree: r.agree, total: r.agree + r.disagree }))
+  if (days.length < 2) {
+    return '<p class="sub">The line appears once two different days have checked prompts.</p>'
+  }
+  const { w, h, left, right, top, bottom } = CHART
+  const x = (i: number) => left + ((w - left - right) * i) / (days.length - 1)
+  const y = (rate: number) => top + (h - top - bottom) * (1 - rate)
+  const points = days.map((d, i) => ({ ...d, cx: x(i), cy: y(d.agree / d.total) }))
+  const grid = [0, 0.5, 1]
+    .map(
+      (g) =>
+        `<line x1="${left}" x2="${w - right}" y1="${y(g)}" y2="${y(g)}" class="grid"/><text x="${left - 6}" y="${y(g) + 4}" text-anchor="end" class="axis">${Math.round(100 * g)}%</text>`,
+    )
+    .join('')
+  const ends = [points[0], points[points.length - 1]] as const
+  const labels = ends
+    .map(
+      (p, i) =>
+        `<text x="${p.cx}" y="${h - 8}" text-anchor="${i === 0 ? 'start' : 'end'}" class="axis">${p.date.slice(5)}</text>`,
+    )
+    .join('')
+  const dots = points
+    .map(
+      (p) =>
+        `<circle cx="${p.cx}" cy="${p.cy}" r="4" class="dot"><title>${p.date}: ${share(p.agree, p.total)} agreed (${p.agree} of ${p.total})</title></circle>`,
+    )
+    .join('')
+  const line = points.map((p) => `${p.cx.toFixed(1)},${p.cy.toFixed(1)}`).join(' ')
+  return `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Share of checked prompts where Opus agreed with Jev, by day">${grid}<polyline points="${line}" class="line"/>${dots}${labels}</svg>`
+}
+
 const CSS = `
 :root{--bg:#fafaf7;--card:#fff;--ink:#1d1d1b;--dim:#6b6b66;--line:#e3e2dc;--blue:#2a6fdb;--amber:#b7791f;--bar:#cfe0fb}
 @media (prefers-color-scheme:dark){:root{--bg:#161614;--card:#1f1f1c;--ink:#ecebe6;--dim:#9a9990;--line:#33332f;--blue:#6ea4f5;--amber:#e0a84a;--bar:#27406b}}
@@ -184,6 +227,7 @@ tr:last-child td{border-bottom:0}td.z{color:var(--dim)}td.moves{text-align:left;
 .bar{display:inline-block;height:8px;background:var(--bar);border-radius:3px;vertical-align:middle;margin-left:6px}
 .wrap{overflow-x:auto}
 ul{margin:6px 0;padding-left:20px;font-size:13px}li{margin:3px 0}
+.chart{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:16px}.chart svg{width:100%;height:auto;display:block}.line{fill:none;stroke:var(--blue);stroke-width:2.5}.dot{fill:var(--blue)}.grid{stroke:var(--line)}.axis{fill:var(--dim);font-size:11px}
 details{margin-top:28px}summary{cursor:pointer;font-size:16px;font-weight:600}
 @media (max-width:760px){.cards{grid-template-columns:1fr 1fr}}
 `
@@ -270,6 +314,11 @@ export function buildDashboard(input: DashboardInput): string {
 ${verdict(input.log)
   .map((line) => `<p>${line}</p>`)
   .join('\n')}
+</div>
+
+<div class="chart">
+<div class="lbl">Share of checked prompts where Opus agreed with Jev, by day. Going up means Jev is improving.</div>
+${agreementChart(rows)}
 </div>
 
 <div class="cards">
