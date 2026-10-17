@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.17
+
+- `/deck collapsed rings` now shows the token total as `1.2M tokens`, shorter than before so the row fits. The in/out split stays in the expanded Tokens row.
+- The README and `assets/styles.svg` show the Tokens row.
+
 ## 0.4.16
 
 - New Tokens row: input and output tokens this session has used, summed across every response including subagents. Toggle with `/deck tokens on|off`.
