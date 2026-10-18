@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.20
+
+- New Switches row: how many times the Jev router switched your main chat's model versus kept it (`61 switched · 39 kept`), with how long ago the newest one was. It reads the router's own switch log (its newest 100 judged switches, across sessions). Toggle with `/deck switches on|off`.
+- Soft dependency: shown only when jev-model-router is installed and has logged a switch. With `routeMainModel` off the router logs nothing new, so the numbers go stale and the age grows.
+
 ## 0.4.19
 
 - `/deck collapsed rings` now ends with an optimizer ring: the grade letter in a ring filled to the score, in the grade's colour, with the score beside it (`S 91 optimizer`). Chips and text already showed the Optimizer row through each row's short form, so the README and `assets/styles.svg` now show it there too.

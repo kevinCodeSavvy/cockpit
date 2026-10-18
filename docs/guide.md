@@ -71,8 +71,9 @@ Deck's bars come in six styles: `pixel`, `segments`, `line`, `solid`, `dots` and
 | `/deck always on\|off` | Open expanded in every new session (default on) |
 | `/deck panel [off]` | Open Deck in a panel of its own, always expanded (terminal and Desktop; the VS Code extension draws none yet). It stays on, reopening each session and whenever it goes missing, until `/deck panel off` |
 | `/deck cache 1h\|5m` | Prompt-cache lifetime for the Cache row (1h subscription, 5m API key) |
-| `/deck <row> on\|off` | Show or hide a row: `plans agents context limits spend tokens optimizer cache route pet clock weather` |
+| `/deck <row> on\|off` | Show or hide a row: `plans agents context limits spend tokens optimizer switches cache route pet clock weather` |
 | `/deck optimizer on\|off` | Show or hide the Optimizer row: the session's quality grade (S to F) and score from the [token-optimizer](https://github.com/alexgreensh/token-optimizer) plugin. It only appears if that plugin is installed; Deck just reads the file it writes and never runs it |
+| `/deck switches on\|off` | Show or hide the Switches row: how many main-chat model switches the Jev router made versus kept, read from the router's switch log. It only appears if jev-model-router is installed and has logged a switch; Deck just reads the file and never runs the router |
 | `/deck cost on` | Also track spend per day and month |
 | `/deck quiet on\|off` | Hide or show the router's own log lines (Deck already shows the route) |
 | `/deck city <name>` | Set the weather city (turns the weather row on) |

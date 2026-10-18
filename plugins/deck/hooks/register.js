@@ -10,10 +10,10 @@ import { TERMINAL_STYLES, TERMINAL_STYLE_NAMES, terminalBar, terminalMini } from
 import { DESKTOP_STYLES, DESKTOP_STYLE_NAMES, desktopTrack, stripsSvg, stripsHeight } from './styles-desktop.js'
 import { createPet, stepPet, petX, petLaneSvg, petFrame, PET_RASTER } from './pet.js'
 
-const SECTIONS = ['plans', 'agents', 'context', 'limits', 'spend', 'tokens', 'optimizer', 'cache', 'route', 'pet', 'clock', 'weather']
+const SECTIONS = ['plans', 'agents', 'context', 'limits', 'spend', 'tokens', 'optimizer', 'switches', 'cache', 'route', 'pet', 'clock', 'weather']
 
 const DEFAULT_PREFS = {
-  show: { plans: true, agents: true, context: true, limits: true, spend: true, tokens: true, optimizer: true, cache: true, route: true, pet: true, clock: true, weather: false },
+  show: { plans: true, agents: true, context: true, limits: true, spend: true, tokens: true, optimizer: true, switches: true, cache: true, route: true, pet: true, clock: true, weather: false },
   always: true, // start every session expanded, whatever the last one left behind
   cacheTtl: '1h', // how long the prompt cache lives: '1h' (subscription) or '5m' (API key)
   style: { terminal: 'solid', desktop: 'pixel' },
@@ -37,7 +37,7 @@ const FOLD_MS = 5000
 const MAX_STRIPS = 4
 const ASK_DELAY_MS = 600
 const TRACK_H = 22
-const VERSION = '0.4.19' // keep in step with .claude-plugin/plugin.json (a test checks)
+const VERSION = '0.4.20' // keep in step with .claude-plugin/plugin.json (a test checks)
 const RIGHT_W = 92
 const TITLE_MAX_CH = 22 // a long prompt as a bar title would squeeze every track
 const TITLE_MAX_PX = 160
@@ -764,6 +764,10 @@ function collectRows(now) {
   const rows = []
   const rr = routeRow()
   if (rr) rows.push(rr)
+  if (prefs.show.switches) {
+    const sw = switchesRow(now)
+    if (sw) rows.push(sw)
+  }
   for (const bar of bars.values()) {
     if (bar.dismissed) continue
     if (bar.id === 'agents' ? !prefs.show.agents : !prefs.show.plans) continue
@@ -904,6 +908,59 @@ async function refreshOptimizer($) {
     }
   } catch {
     optimizer = null
+  }
+}
+
+// how often the Jev router switched the main chat's model versus kept it, from the router's switch-log
+// (its newest 100 judged switches, across sessions). Soft dependency like the Optimizer row: no router,
+// no store file or an empty log means no row. Only the router's own saved file is read.
+let switches = null
+async function refreshSwitches($) {
+  try {
+    const home = await $.env.get('HOME')
+    if (!home) throw new Error('no home')
+    const dir = home + '/.claude/plugins/store'
+    const files = (await $.fs.list(dir))
+      .filter((f) => f.kind === 'file' && f.name.startsWith('jev-model-router_') && f.name.endsWith('.json'))
+      .sort((a, b) => b.mtimeMs - a.mtimeMs)
+    if (!files.length) throw new Error('router not installed')
+    const log = JSON.parse(await $.fs.read(dir + '/' + files[0].name))['switch-log']
+    if (!Array.isArray(log)) throw new Error('unexpected shape')
+    let switched = 0
+    let kept = 0
+    let newest = 0
+    for (const r of log) {
+      if (r?.allowed === true) switched++
+      else if (r?.allowed === false) kept++
+      else continue
+      if (typeof r.at === 'number' && r.at > newest) newest = r.at
+    }
+    switches = switched + kept > 0 ? { switched, kept, newest } : null
+  } catch {
+    switches = null
+  }
+}
+
+function switchesRow(now) {
+  const w = switches
+  if (!w) return null
+  const total = w.switched + w.kept
+  const age = w.newest ? Math.max(0, now - w.newest) : 0
+  const ago = !w.newest ? '' : age < 3600_000 ? Math.max(1, Math.round(age / 60_000)) + 'm' : age < 86_400_000 ? Math.round(age / 3600_000) + 'h' : Math.round(age / 86_400_000) + 'd'
+  return {
+    id: 'switches',
+    kind: 'meter',
+    style: 'run',
+    title: 'Switches',
+    pct: (w.switched / total) * 100,
+    marks: [],
+    name: w.switched + ' switched · ' + w.kept + ' kept',
+    count: '',
+    right: ago ? 'newest ' + ago + ' ago' : '',
+    short: 'sw ' + w.switched + '/' + w.kept,
+    section: 'switches',
+    hist: [],
+    rate: '',
   }
 }
 
@@ -1785,6 +1842,7 @@ export function register(on) {
     } catch {}
     await loadSpend($)
     await refreshOptimizer($)
+    await refreshSwitches($)
     refreshWeather($).catch(() => {})
 
     $.clock.every(150, async () => {
@@ -1799,7 +1857,10 @@ export function register(on) {
       const ticking = secondTick && (prefs.show.clock || rows.some((r) => r.kind === 'meter' || r.strips))
       if (petMoved || terminalAnim || ticking) $.ui.invalidate('ui.render')
       if (frame % 14 === 0) await syncAgents($)
-      if (frame % 200 === 0) await refreshOptimizer($)
+      if (frame % 200 === 0) {
+        await refreshOptimizer($)
+        await refreshSwitches($)
+      }
       if (prefs.panel && frame % 20 === 0) await ensurePanel($)
       if (frame % 400 === 0) await refreshUsage($)
       else if (frame % 100 === 0) await noteUsage($)
