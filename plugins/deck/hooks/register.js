@@ -37,7 +37,7 @@ const FOLD_MS = 5000
 const MAX_STRIPS = 4
 const ASK_DELAY_MS = 600
 const TRACK_H = 22
-const VERSION = '0.4.21' // keep in step with .claude-plugin/plugin.json (a test checks)
+const VERSION = '0.4.22' // keep in step with .claude-plugin/plugin.json (a test checks)
 const RIGHT_W = 92
 const TITLE_MAX_CH = 22 // a long prompt as a bar title would squeeze every track
 const TITLE_MAX_PX = 160
@@ -911,9 +911,11 @@ async function refreshOptimizer($) {
   }
 }
 
-// how often the Jev router switched the main chat's model versus kept it, from the router's switch-log
-// (its newest 100 judged switches, across sessions). Soft dependency like the Optimizer row: no router,
-// no store file or an empty log means no row. Only the router's own saved file is read.
+// how often the Jev router switched the main chat's model versus kept it in this session, from the
+// router's switch-log (entries stamped since the session started; the log has no session id, so two
+// sessions running at once share it). Soft dependency like the Optimizer row: no router or no store
+// file means no row. Only the router's own saved file is read.
+let sessionStartedAt = Date.now()
 let switches = null
 async function refreshSwitches($) {
   try {
@@ -924,18 +926,22 @@ async function refreshSwitches($) {
       .filter((f) => f.kind === 'file' && f.name.startsWith('jev-model-router_') && f.name.endsWith('.json'))
       .sort((a, b) => b.mtimeMs - a.mtimeMs)
     if (!files.length) throw new Error('router not installed')
-    const log = JSON.parse(await $.fs.read(dir + '/' + files[0].name))['switch-log']
+    const saved = JSON.parse(await $.fs.read(dir + '/' + files[0].name))
+    if (!saved || typeof saved !== 'object') throw new Error('unexpected shape')
+    // a router that has not judged a switch yet has no log; that is zero, not absent
+    const log = saved['switch-log'] ?? []
     if (!Array.isArray(log)) throw new Error('unexpected shape')
     let switched = 0
     let kept = 0
     let newest = 0
     for (const r of log) {
+      if (typeof r?.at !== 'number' || r.at < sessionStartedAt) continue
       if (r?.allowed === true) switched++
       else if (r?.allowed === false) kept++
       else continue
       if (typeof r.at === 'number' && r.at > newest) newest = r.at
     }
-    switches = switched + kept > 0 ? { switched, kept, newest } : null
+    switches = { switched, kept, newest }
   } catch {
     switches = null
   }
@@ -952,11 +958,11 @@ function switchesRow(now) {
     kind: 'meter',
     style: 'run',
     title: 'Jev model switches',
-    pct: (w.switched / total) * 100,
+    pct: total ? (w.switched / total) * 100 : 0,
     marks: [],
     name: w.switched + ' switched · ' + w.kept + ' kept',
     count: '',
-    right: ago ? ago + ' ago' : '',
+    right: ago ? ago + ' ago' : 'this session',
     short: 'sw ' + w.switched + '/' + w.kept,
     section: 'switches',
     hist: [],
@@ -1841,6 +1847,7 @@ export function register(on) {
     try {
       sessionId = await $.session.id()
     } catch {}
+    sessionStartedAt = Date.now()
     await loadSpend($)
     await refreshOptimizer($)
     await refreshSwitches($)

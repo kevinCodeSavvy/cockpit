@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.22
+
+- The Jev model switches row now counts only this session. It used to show the router's whole saved log (its newest 100 judged switches across every session), so it never changed between sessions. It now starts at `0 switched · 0 kept` and counts entries stamped since the session began; the right-hand text reads `this session` until the first one.
+- The row is shown whenever jev-model-router is installed, including when it has logged nothing yet. The router's log has no session id, so two sessions running at once share it.
+
 ## 0.4.21
 
 - The Optimizer row is now titled "Token optimizer score" and the Switches row "Jev model switches", so the left column says what each one is. Longer than about 22 characters would be cut off and squeeze the bars, so these two are the longest that fit.
