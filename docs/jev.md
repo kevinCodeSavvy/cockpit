@@ -79,6 +79,10 @@ Related switches that live under Deck:
 | `/deck route on\|off` | Shows or hides the **Model route** row, which displays every decision live with Jev's confidence. |
 | `/deck quiet on\|off` | Hides or shows the router's own log lines in the transcript. |
 
+## When switching the main chat's model costs more
+
+`routeMainModel` is off by default because a model's prompt cache belongs to that model, so a switch re-sends the whole conversation. In one real switch log (the newest 100 judged switches over about a day, median context about 430k tokens), the router's own estimates came to about $19 extra from 49 moves up to the deep tier, against about $0.54 saved by 6 moves down; 38 more moves down were held back by the cache check, which put them at about $4.50 more. These are estimates from one history, not a bill, and they leave out what subagent and effort routing save. On long conversations, leave `routeMainModel` off or turn on `cacheGateUpgrades`, and compare your Deck Spend row with and without it.
+
 ## Where to turn things off
 
 - `autoTune`: stop the "not sure" line from moving.

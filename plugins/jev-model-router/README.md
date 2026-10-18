@@ -157,6 +157,8 @@ Every judged switch (the router wanted a different model than the session's) is 
 
 It is an estimate: output length is assumed (`cacheOutputTokens`, 1500), the horizon is a guess at how long a switch lasts, and the cache lifetime is assumed rather than read from the API.
 
+**`routeMainModel` can cost more on long conversations.** One real switch log (the newest 100 judged switches over about a day, in conversations with a median context of about 430k tokens) added up, by the router's own estimates, to about $19 of extra cost from 49 moves up to the deep tier, against about $0.54 saved by 6 moves down. A further 38 moves down were held back by the cache check, which estimated they would have cost about $4.50 more. Moves up are not held back unless `cacheGateUpgrades` is on. These are estimates from one session history, not a bill, and they leave out what subagent routing and effort routing save, so treat them as a reason to measure your own, not a rule. With long conversations, leave `routeMainModel` off (the default), or turn on `cacheGateUpgrades`, and compare the Deck Spend row with and without it.
+
 ## Auto-tune
 
 With `autoTune` on (the default), the router may move `unsureBelow`, and only that, once per session at start. It reads the shadow log near the floor (0.15 either side), counting only records newer than its last move:
