@@ -1,15 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 196" width="900" height="196" role="img" aria-label="Animation: the Deck panel's Cache row drains over the prompt cache lifetime. It is green while warm, turns amber as it runs low, and in the last minute turns red and reads &quot;55s, rewrite about $0.50&quot; with the countdown beside it. Sending a message would warm it again.">
 <style>
 text{font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;dominant-baseline:middle}
-.dr-cache{transform-origin:196px 136px;animation:dr-cache 12s linear infinite}@keyframes dr-cache{0%{transform:scaleX(1)}100%{transform:scaleX(.03)}}
-.cache0{animation:kcache0 12s linear infinite}@keyframes kcache0{0%,22.00%{opacity:1}22.01%,100%{opacity:0}}
-.cache1{animation:kcache1 12s linear infinite}@keyframes kcache1{0%,22.00%{opacity:0}22.01%,45.00%{opacity:1}45.01%,100%{opacity:0}}
-.cache2{animation:kcache2 12s linear infinite}@keyframes kcache2{0%,45.00%{opacity:0}45.01%,67.00%{opacity:1}67.01%,100%{opacity:0}}
-.cache3{animation:kcache3 12s linear infinite}@keyframes kcache3{0%,67.00%{opacity:0}67.01%,80.00%{opacity:1}80.01%,100%{opacity:0}}
-.cache4{animation:kcache4 12s linear infinite}@keyframes kcache4{0%,80.00%{opacity:0}80.01%,93.00%{opacity:1}93.01%,100%{opacity:0}}
-.cache5{animation:kcache5 12s linear infinite}@keyframes kcache5{0%,93.00%{opacity:0}93.01%,100%{opacity:1}}
-.cache6{animation:kcache6 12s linear infinite}@keyframes kcache6{0%,79.90%{opacity:1}79.91%,100%{opacity:0}}
-.cache7{animation:kcache7 12s linear infinite}@keyframes kcache7{0%,80.00%{opacity:0}80.01%,100%{opacity:1}}
+.dr-cache{transform-origin:196px 136px;animation:dr-cache 24s linear infinite}@keyframes dr-cache{0%{transform:scaleX(1)}100%{transform:scaleX(.03)}}
+.cache0{animation:kcache0 24s linear infinite}@keyframes kcache0{0%,22.00%{opacity:1}22.01%,100%{opacity:0}}
+.cache1{animation:kcache1 24s linear infinite}@keyframes kcache1{0%,22.00%{opacity:0}22.01%,45.00%{opacity:1}45.01%,100%{opacity:0}}
+.cache2{animation:kcache2 24s linear infinite}@keyframes kcache2{0%,45.00%{opacity:0}45.01%,67.00%{opacity:1}67.01%,100%{opacity:0}}
+.cache3{animation:kcache3 24s linear infinite}@keyframes kcache3{0%,67.00%{opacity:0}67.01%,80.00%{opacity:1}80.01%,100%{opacity:0}}
+.cache4{animation:kcache4 24s linear infinite}@keyframes kcache4{0%,80.00%{opacity:0}80.01%,93.00%{opacity:1}93.01%,100%{opacity:0}}
+.cache5{animation:kcache5 24s linear infinite}@keyframes kcache5{0%,93.00%{opacity:0}93.01%,100%{opacity:1}}
+.cache6{animation:kcache6 24s linear infinite}@keyframes kcache6{0%,79.90%{opacity:1}79.91%,100%{opacity:0}}
+.cache7{animation:kcache7 24s linear infinite}@keyframes kcache7{0%,80.00%{opacity:0}80.01%,100%{opacity:1}}
 @media (prefers-reduced-motion:reduce){.ph{animation:none;opacity:0}.last{opacity:1}.drain{animation:none;transform:scaleX(.1)}.still{animation:none}}
 </style>
 <rect width="900" height="196" rx="10" fill="#16161a" stroke="#2b2a28"/>

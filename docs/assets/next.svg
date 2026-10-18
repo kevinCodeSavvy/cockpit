@@ -1,13 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 276" width="900" height="276" role="img" aria-label="Animation: after a reply, a box lists up to three suggested next prompts with number keys. Pressing 2 highlights that suggestion and puts it in the prompt box as an editable draft with a blinking cursor. Zero dismisses the box.">
 <style>
 text{font:15px ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;dominant-baseline:middle}
-.next0{animation:knext0 12s linear infinite}@keyframes knext0{0%,30.00%{opacity:0}30.01%,100%{opacity:1}}
-.next1{animation:knext1 12s linear infinite}@keyframes knext1{0%,44.90%{opacity:1}44.91%,100%{opacity:0}}
-.next2{animation:knext2 12s linear infinite}@keyframes knext2{0%,45.00%{opacity:0}45.01%,100%{opacity:1}}
+.next0{animation:knext0 24s linear infinite}@keyframes knext0{0%,30.00%{opacity:0}30.01%,100%{opacity:1}}
+.next1{animation:knext1 24s linear infinite}@keyframes knext1{0%,44.90%{opacity:1}44.91%,100%{opacity:0}}
+.next2{animation:knext2 24s linear infinite}@keyframes knext2{0%,45.00%{opacity:0}45.01%,100%{opacity:1}}
 @keyframes caret{50%{fill:transparent}}
-.next3{animation:knext3 12s linear infinite}@keyframes knext3{0%,29.90%{opacity:1}29.91%,100%{opacity:0}}
-.next4{animation:knext4 12s linear infinite}@keyframes knext4{0%,30.00%{opacity:0}30.01%,44.90%{opacity:1}44.91%,100%{opacity:0}}
-.next5{animation:knext5 12s linear infinite}@keyframes knext5{0%,45.00%{opacity:0}45.01%,100%{opacity:1}}
+.next3{animation:knext3 24s linear infinite}@keyframes knext3{0%,29.90%{opacity:1}29.91%,100%{opacity:0}}
+.next4{animation:knext4 24s linear infinite}@keyframes knext4{0%,30.00%{opacity:0}30.01%,44.90%{opacity:1}44.91%,100%{opacity:0}}
+.next5{animation:knext5 24s linear infinite}@keyframes knext5{0%,45.00%{opacity:0}45.01%,100%{opacity:1}}
 @media (prefers-reduced-motion:reduce){.ph{animation:none;opacity:0}.last{opacity:1}.drain{animation:none;transform:scaleX(.1)}.still{animation:none}}
 </style>
 

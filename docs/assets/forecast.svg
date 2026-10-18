@@ -1,15 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 188" width="900" height="188" role="img" aria-label="Animation: the 5-hour limit row. First it shows the percent used and a reset countdown. Once usage has been rising for a few minutes and the pace would reach the limit before it resets, the countdown is replaced by a warning with the time the limit will be hit, 3:50pm, and the bar turns amber. As usage keeps rising the hit time moves earlier, to 2:50pm, and the bar turns red.">
 <style>
 text{font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;dominant-baseline:middle}
-.forecast0{animation:kforecast0 14s linear infinite}@keyframes kforecast0{0%,30.00%{opacity:1}30.01%,100%{opacity:0}}
-.forecast1{animation:kforecast1 14s linear infinite}@keyframes kforecast1{0%,30.00%{opacity:0}30.01%,62.00%{opacity:1}62.01%,100%{opacity:0}}
-.forecast2{animation:kforecast2 14s linear infinite}@keyframes kforecast2{0%,62.00%{opacity:0}62.01%,100%{opacity:1}}
-.forecast3{animation:kforecast3 14s linear infinite}@keyframes kforecast3{0%,29.90%{opacity:1}29.91%,100%{opacity:0}}
-.forecast4{animation:kforecast4 14s linear infinite}@keyframes kforecast4{0%,30.00%{opacity:0}30.01%,61.90%{opacity:1}61.91%,100%{opacity:0}}
-.forecast5{animation:kforecast5 14s linear infinite}@keyframes kforecast5{0%,62.00%{opacity:0}62.01%,100%{opacity:1}}
-.forecast6{animation:kforecast6 14s linear infinite}@keyframes kforecast6{0%,29.90%{opacity:1}29.91%,100%{opacity:0}}
-.forecast7{animation:kforecast7 14s linear infinite}@keyframes kforecast7{0%,30.00%{opacity:0}30.01%,61.90%{opacity:1}61.91%,100%{opacity:0}}
-.forecast8{animation:kforecast8 14s linear infinite}@keyframes kforecast8{0%,62.00%{opacity:0}62.01%,100%{opacity:1}}
+.forecast0{animation:kforecast0 28s linear infinite}@keyframes kforecast0{0%,30.00%{opacity:1}30.01%,100%{opacity:0}}
+.forecast1{animation:kforecast1 28s linear infinite}@keyframes kforecast1{0%,30.00%{opacity:0}30.01%,62.00%{opacity:1}62.01%,100%{opacity:0}}
+.forecast2{animation:kforecast2 28s linear infinite}@keyframes kforecast2{0%,62.00%{opacity:0}62.01%,100%{opacity:1}}
+.forecast3{animation:kforecast3 28s linear infinite}@keyframes kforecast3{0%,29.90%{opacity:1}29.91%,100%{opacity:0}}
+.forecast4{animation:kforecast4 28s linear infinite}@keyframes kforecast4{0%,30.00%{opacity:0}30.01%,61.90%{opacity:1}61.91%,100%{opacity:0}}
+.forecast5{animation:kforecast5 28s linear infinite}@keyframes kforecast5{0%,62.00%{opacity:0}62.01%,100%{opacity:1}}
+.forecast6{animation:kforecast6 28s linear infinite}@keyframes kforecast6{0%,29.90%{opacity:1}29.91%,100%{opacity:0}}
+.forecast7{animation:kforecast7 28s linear infinite}@keyframes kforecast7{0%,30.00%{opacity:0}30.01%,61.90%{opacity:1}61.91%,100%{opacity:0}}
+.forecast8{animation:kforecast8 28s linear infinite}@keyframes kforecast8{0%,62.00%{opacity:0}62.01%,100%{opacity:1}}
 @media (prefers-reduced-motion:reduce){.ph{animation:none;opacity:0}.last{opacity:1}.drain{animation:none;transform:scaleX(.1)}.still{animation:none}}
 </style>
 <rect width="900" height="188" rx="10" fill="#16161a" stroke="#2b2a28"/>
