@@ -69,10 +69,17 @@ Deck's bars come in six styles: `pixel`, `segments`, `line`, `solid`, `dots` and
 | `/deck collapsed chips\|text\|rings` | How Deck looks when collapsed: chips with mini bars, one plain line, or limit rings |
 | `/deck size compact\|roomy` | Row spacing on Desktop (compact is the default) |
 | `/deck always on\|off` | Open expanded in every new session (default on) |
+| `/deck panel [off]` | Open Deck in a panel of its own, always expanded (terminal and Desktop; the VS Code extension draws none yet). It stays on, reopening each session and whenever it goes missing, until `/deck panel off` |
 | `/deck cache 1h\|5m` | Prompt-cache lifetime for the Cache row (1h subscription, 5m API key) |
-| `/deck <row> on\|off` | Show or hide a row: `plans agents context limits spend cache route pet clock weather` |
+| `/deck <row> on\|off` | Show or hide a row: `plans agents context limits spend tokens cache route pet clock weather` |
 | `/deck cost on` | Also track spend per day and month |
 | `/deck quiet on\|off` | Hide or show the router's own log lines (Deck already shows the route) |
+| `/deck city <name>` | Set the weather city (turns the weather row on) |
+| `/deck auto on\|off` | Expand Deck when something needs you |
+| `/deck sound on\|off` | Turn Deck's sounds on or off |
+| `/deck demo` | Play a sample plan with agents |
+| `/deck clear` | Remove all bars |
+| `/deck version` | Show which Deck version is running |
 | `/deck status` | Print everything Deck shows |
 | `/jev-shadow` | Shows how often Opus agreed with Jev, by Jev's confidence level, plus the confidence floor in force and the last tuning changes. Reads saved data only and calls no model. |
 | `/jev-dashboard` | Writes a local HTML page of the router's daily numbers and opens it in your browser. `/jev-dashboard no-open` writes it without opening. |
