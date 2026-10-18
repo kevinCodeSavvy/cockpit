@@ -66,7 +66,7 @@ If your pace would reach the 5-hour or 7-day limit before it resets, the hit tim
 
 <img src="docs/assets/route.svg" width="900" alt="Animation: the Model route row for three prompts. A typo fix gets low effort and a haiku suggestion that is not applied, a question gets medium effort, and a risky database migration gets extra high effort with a risk flag. Each decision adds a square to the history">
 
-[Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev) judges each prompt and sets the reasoning effort. Subagents get a model to match. Your main chat's model is only switched if you turn on `routeMainModel`, because switching mid-session throws away the cache.
+[Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev) judges each prompt and sets the reasoning effort. Subagents get a model to match. Your main chat's model is only switched if you turn on `routeMainModel`, because switching mid-session throws away the cache. To see how the routing is checked and how the dashboard works, read [How Jev routing works](docs/jev.md).
 
 ### Suggests what to do next
 
@@ -90,6 +90,7 @@ Show or hide rows and change the look with `/deck` commands, for example `/deck 
 ## Documentation
 
 - [Guide](docs/guide.md): first run, Jev setup, bar styles, every command, and what changed from the originals.
+- [How Jev routing works](docs/jev.md): the shadow-log loop, what auto-tune can and cannot change, the dashboard, and the Jev commands.
 - [Deck](plugins/deck/README.md), [next-steps](plugins/next-steps/README.md) and [jev-model-router](plugins/jev-model-router/README.md): each plugin in detail.
 - [Credits](CREDITS.md): this bundles other people's work, with changes.
 
