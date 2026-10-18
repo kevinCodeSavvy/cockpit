@@ -10,11 +10,12 @@ text{font:15px ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-seri
 .panel5{animation:kpanel5 28s linear infinite}@keyframes kpanel5{0%,75.00%{opacity:0}75.01%,100%{opacity:1}}
 .panel6{animation:kpanel6 28s linear infinite}@keyframes kpanel6{0%,50.00%{opacity:1}50.01%,100%{opacity:0}}
 .panel7{animation:kpanel7 28s linear infinite}@keyframes kpanel7{0%,50.00%{opacity:0}50.01%,100%{opacity:1}}
-.gr{animation:gr 28s linear infinite}@keyframes gr{0%{transform:scaleX(.75)}100%{transform:scaleX(1)}}
-.gr5{transform-origin:140px 268px;animation:gr5 28s linear infinite}@keyframes gr5{0%{transform:scaleX(.65)}100%{transform:scaleX(1)}}
-.gr7{transform-origin:140px 300px;animation:gr7 28s linear infinite}@keyframes gr7{0%{transform:scaleX(.92)}100%{transform:scaleX(1)}}
+.gr{animation:gr 28s linear infinite}@keyframes gr{0%{transform:scaleX(.34)}100%{transform:scaleX(1)}}
+.gr5{transform-origin:140px 268px;animation:gr5 28s linear infinite}@keyframes gr5{0%{transform:scaleX(.3)}100%{transform:scaleX(1)}}
+.gr7{transform-origin:140px 300px;animation:gr7 28s linear infinite}@keyframes gr7{0%{transform:scaleX(.8)}100%{transform:scaleX(1)}}
 .grc{transform-origin:140px 236px}
-@media (prefers-reduced-motion:reduce){.gr,.gr5,.gr7{animation:none}.ph{animation:none;opacity:0}.last{opacity:1}.drain{animation:none;transform:scaleX(.1)}.still{animation:none}}
+.grs{transform-origin:140px 332px;animation:gr 28s linear infinite}.grt{transform-origin:140px 364px;animation:gr 28s linear infinite}
+@media (prefers-reduced-motion:reduce){.gr,.gr5,.gr7,.grs,.grt{animation:none}.ph{animation:none;opacity:0}.last{opacity:1}.drain{animation:none;transform:scaleX(.1)}.still{animation:none}}
 </style>
 
 <rect width="900" height="428" rx="14" fill="#161616"/><rect x="6" y="8" width="888" height="412" rx="10" fill="#212121"/>
@@ -28,22 +29,23 @@ text{font:15px ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-seri
 <text x="24" y="236" fill="#8B7CF6" style="font-size:13px;">●</text><text x="44" y="236" fill="#e8e6e1" style="font-size:14px;">Context</text><text x="886" y="236" fill="#66666a" text-anchor="end" style="font-size:11px;">✕</text>
 <rect x="140" y="224" width="604" height="24" rx="6" fill="#2f2f2f"/>
 <g class="gr grc"><rect x="140" y="224" width="72" height="24" rx="6" fill="#8B7CF6"/></g>
-<g class="panel0 ph"><text x="150" y="236" fill="#fff" style="font-weight:600" stroke="#161616" stroke-width="3" paint-order="stroke" stroke-linejoin="round">92k / 1M</text><text x="844" y="236" fill="#8c8c8c" text-anchor="end" style="font-size:14px;">9%</text></g>
+<g class="panel0 ph"><text x="150" y="236" fill="#fff" style="font-weight:600" stroke="#161616" stroke-width="3" paint-order="stroke" stroke-linejoin="round">41k / 1M</text><text x="844" y="236" fill="#8c8c8c" text-anchor="end" style="font-size:14px;">4%</text></g>
 <g class="panel1 ph last"><text x="150" y="236" fill="#fff" style="font-weight:600" stroke="#161616" stroke-width="3" paint-order="stroke" stroke-linejoin="round">118k / 1M</text><text x="844" y="236" fill="#8c8c8c" text-anchor="end" style="font-size:14px;">12%</text></g>
 <text x="24" y="268" fill="#52A06F" style="font-size:13px;">◔</text><text x="44" y="268" fill="#e8e6e1" style="font-size:14px;">Session · 5h</text><text x="886" y="268" fill="#66666a" text-anchor="end" style="font-size:11px;">✕</text>
 <rect x="140" y="256" width="604" height="24" rx="6" fill="#2f2f2f"/>
 <g class="gr5"><rect x="140" y="256" width="48" height="24" rx="6" fill="#52A06F"/></g>
-<g class="panel0 ph"><text x="150" y="268" fill="#fff" style="font-weight:600" stroke="#161616" stroke-width="3" paint-order="stroke" stroke-linejoin="round">5h<tspan fill="#8c8c8c" style="font-weight:400"> · 5% used</tspan></text></g><g class="panel1 ph last"><text x="150" y="268" fill="#fff" style="font-weight:600" stroke="#161616" stroke-width="3" paint-order="stroke" stroke-linejoin="round">5h<tspan fill="#8c8c8c" style="font-weight:400"> · 8% used</tspan></text></g><text x="844" y="268" fill="#8c8c8c" text-anchor="end" style="font-size:14px;">↻ 1:30:24</text>
+<g class="panel0 ph"><text x="150" y="268" fill="#fff" style="font-weight:600" stroke="#161616" stroke-width="3" paint-order="stroke" stroke-linejoin="round">5h<tspan fill="#8c8c8c" style="font-weight:400"> · 2% used</tspan></text></g><g class="panel1 ph last"><text x="150" y="268" fill="#fff" style="font-weight:600" stroke="#161616" stroke-width="3" paint-order="stroke" stroke-linejoin="round">5h<tspan fill="#8c8c8c" style="font-weight:400"> · 8% used</tspan></text></g><text x="844" y="268" fill="#8c8c8c" text-anchor="end" style="font-size:14px;">↻ 1:30:24</text>
 <text x="24" y="300" fill="#52A06F" style="font-size:13px;">◔</text><text x="44" y="300" fill="#e8e6e1" style="font-size:14px;">Weekly · 7d</text><text x="886" y="300" fill="#66666a" text-anchor="end" style="font-size:11px;">✕</text>
 <rect x="140" y="288" width="604" height="24" rx="6" fill="#2f2f2f"/>
 <g class="gr7"><rect x="140" y="288" width="78" height="24" rx="6" fill="#52A06F"/></g>
 <g class="panel0 ph"><text x="150" y="300" fill="#fff" style="font-weight:600" stroke="#161616" stroke-width="3" paint-order="stroke" stroke-linejoin="round">7d · 12%<tspan fill="#8c8c8c" style="font-weight:400"> used</tspan></text></g><g class="panel1 ph last"><text x="150" y="300" fill="#fff" style="font-weight:600" stroke="#161616" stroke-width="3" paint-order="stroke" stroke-linejoin="round">7d · 13%<tspan fill="#8c8c8c" style="font-weight:400"> used</tspan></text></g><text x="844" y="300" fill="#8c8c8c" text-anchor="end" style="font-size:14px;">↻ 1d 20h 59m</text>
 <text x="24" y="332" fill="#52A06F" style="font-size:13px;">✓</text><text x="44" y="332" fill="#e8e6e1" style="font-size:14px;">Spend</text><text x="886" y="332" fill="#66666a" text-anchor="end" style="font-size:11px;">✕</text>
 <rect x="140" y="320" width="604" height="24" rx="6" fill="#2f2f2f"/>
-<text x="150" y="332" fill="#8c8c8c" style="font-weight:600">$0.16 this session</text><text x="844" y="332" fill="#8c8c8c" text-anchor="end" style="font-size:14px;">$101 today</text>
+<g class="grs"><rect x="140" y="320" width="150" height="24" rx="6" fill="#52A06F"/></g><g class="panel0 ph"><text x="150" y="332" fill="#fff" style="font-weight:600" stroke="#161616" stroke-width="3" paint-order="stroke" stroke-linejoin="round">$0.06 this session</text></g><g class="panel1 ph last"><text x="150" y="332" fill="#fff" style="font-weight:600" stroke="#161616" stroke-width="3" paint-order="stroke" stroke-linejoin="round">$0.16 this session</text></g><text x="844" y="332" fill="#8c8c8c" text-anchor="end" style="font-size:14px;">$101 today</text>
 <text x="24" y="364" fill="#8B7CF6" style="font-size:13px;">T</text><text x="44" y="364" fill="#e8e6e1" style="font-size:14px;">Tokens</text><text x="886" y="364" fill="#66666a" text-anchor="end" style="font-size:11px;">✕</text>
 <rect x="140" y="352" width="604" height="24" rx="6" fill="#2f2f2f"/>
-<g class="panel0 ph"><text x="150" y="364" fill="#8c8c8c" style="font-weight:600">↓92k in · ↑7.1k out</text></g><g class="panel1 ph last"><text x="150" y="364" fill="#8c8c8c" style="font-weight:600">↓118k in · ↑9.4k out</text></g><text x="844" y="364" fill="#8c8c8c" text-anchor="end" style="font-size:14px;">this session</text>
+<g class="grt"><rect x="140" y="352" width="190" height="24" rx="6" fill="#8B7CF6"/></g>
+<g class="panel0 ph"><text x="150" y="364" fill="#fff" style="font-weight:600" stroke="#161616" stroke-width="3" paint-order="stroke" stroke-linejoin="round">↓44k in · ↑3.2k out</text></g><g class="panel1 ph last"><text x="150" y="364" fill="#fff" style="font-weight:600" stroke="#161616" stroke-width="3" paint-order="stroke" stroke-linejoin="round">↓118k in · ↑9.4k out</text></g><text x="844" y="364" fill="#8c8c8c" text-anchor="end" style="font-size:14px;">this session</text>
 <text x="24" y="396" fill="#52A06F" style="font-size:13px;">◔</text><text x="44" y="396" fill="#e8e6e1" style="font-size:14px;">Cache</text><text x="886" y="396" fill="#66666a" text-anchor="end" style="font-size:11px;">✕</text>
 <rect x="140" y="384" width="604" height="24" rx="6" fill="#2f2f2f"/>
 <g class="drain dr-panel"><rect x="140" y="384" width="604" height="24" rx="6" fill="#52A06F"/></g>
