@@ -40,17 +40,23 @@ What it cannot do: the log does not record which model a turn ran on, so the upg
 
 `/jev-dashboard` writes one self-contained page to `~/.claude/jev-model-router/dashboard.html` (no scripts, no network, no prompt text) and opens it. It is a **snapshot**: the page only changes when you run the command again.
 
+The page's own title is "How is Jev doing?". Sections appear in this order:
+
 | Section | What it tells you |
 |---|---|
-| **How is Jev doing?** | Whether Jev and Opus agree more, less or about as often as before. It compares the older half of checked prompts with the newer half, and needs 20 or more checked prompts and a 5-point change to say anything. More agreement is not proof Jev improved. |
-| **Agreement graph** | Per day, the share of checked prompts where Opus agreed with Jev. Needs two days with checks. |
-| **How sure Jev said it was** | Per day, Jev's average stated confidence. That is its own claim, not a score of whether it was right. A dashed orange marker shows each day the "not sure" line moved. |
-| **What happened today** | Plain counts, and where the "not sure" line sits now. |
-| **How often is the costly model used?** | The share of prompts sent to Opus because Jev was unsure, before and after the last move of the line. Prompts, not dollars. |
-| **Does Jev know when it is right?** | Checked prompts grouped by Jev's confidence, with how often Opus agreed in each band. |
-| **Every day** | The last 14 days with activity: unsure, double-checked, share agreed, any change to the line. |
-| **Does Jev learn from this?** | A plain "no", plus what the line last did and why. |
-| **Collapsed sections** | The newest 15 model switches (with chat size) and the last ten changes to the line. |
+| **What is this?** | A short box explaining that Jev picks how strong a model each prompt gets, and that Opus sometimes picks too as a check. |
+| **Banner (headline)** | One sentence: Jev and Opus agree more often now, less often now, about as often as before, or "Too early to tell." It compares the older half of checked prompts with the newer half, and needs 20 or more checked prompts and a 5-point change to say anything but "about as often". More agreement is not proof Jev improved. |
+| **What happened today** | Plain counts: prompts Jev looked at, how many it was not sure about (sent to Opus), how many Opus double-checked and how often it agreed. Also where the "not sure" line sits now and whether it was tuned. |
+| **Day by day: how often Opus agreed with Jev** | A line graph, one dot per day (hover for counts). A rising line means they agree more often. Needs two days with checks. |
+| **Day by day: how sure Jev said it was** | A line graph of Jev's average stated confidence per day. That is its own claim, not a score of whether it was right. A dashed orange line marks each day the "not sure" line moved. Needs two days with prompts. |
+| **How often does the costly model get used?** | The share of prompts sent to Opus because Jev was unsure, over the busy days. If the line has moved, it gives the share up to and including the day of the last move and the share since (with "too few days to be sure" under seven days). It counts prompts, not dollars. |
+| **Does Jev know when it is right?** | A table of double-checked prompts by Jev's confidence band ("Under 30% sure" up to "90% or more sure", plus "No confidence given"), with the count and a bar for how often Opus agreed. Healthy means the more sure Jev is, the longer the bar. |
+| **Every day** | The last 14 UTC days with activity: prompts, how many Jev was not sure about, how many Opus double-checked, the share Opus agreed with, and any change to the "not sure" line. Days with no activity are hidden and counted. |
+| **Does Jev learn from this?** | A plain "No". Only the router's own "not sure" line adjusts itself, at most once a day, and that changes which prompts go to Opus, not what Jev picks. It also says what the line last did and why. |
+| **Words used on this page** | A glossary, open by default. |
+| **Times the router changed your model** (collapsed) | The title shows the switched and kept counts. Lists the newest 15 judged switches: when, the move, chat size, whether it switched or kept the current model, and why. |
+| **Times the "not sure" line was moved** (collapsed) | The last ten changes to the line. |
+| **Small print** (collapsed) | The page keeps only the newest 300 double-checks, so older days can look thin, and prompt counts only cover prompts where Jev reported a confidence. |
 
 Counts come from per-day counters and the shadow log, which keeps only the newest 300 records, so older days can be partial.
 
