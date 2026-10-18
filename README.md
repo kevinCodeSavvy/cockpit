@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/assets/panel.svg" width="900" alt="Animation: the cockpit panel in Claude Code Desktop. Three suggested next prompts sit above Deck, which shows the model route, context, 5-hour and 7-day limits, spend and a prompt-cache bar that drains while the route changes from a low-effort decision to a high-effort one">
+  <img src="docs/assets/panel.svg" width="900" alt="Animation: the cockpit panel in Claude Code Desktop. Three suggested next prompts sit above Deck, which shows the model route, context, 5-hour and 7-day limits, spend, tokens in and out, the token-optimizer grade and a prompt-cache bar. The context, limit, spend, tokens and optimizer bars grow while the cache bar drains and the route changes from a low-effort decision to a high-effort one">
 </p>
 
 ## Why
