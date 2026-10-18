@@ -132,9 +132,12 @@ The page opens with a short "What is this?" box, then a banner that answers "How
 
 Below that, a line graph plots the share of checked prompts where Opus agreed with Jev for each day with checks, oldest on the left, so a rising line means Jev and Opus agree more often (from 0.9.1; it needs two days with checks, and hovering a point shows that day's counts).
 
+A second line graph, "how sure Jev said it was" (from 0.9.5), plots Jev's average stated confidence for each day with prompts. It is Jev's own claim, not a score of whether it was right, which is what the agreement graph above checks. On both graphs, a dashed orange "line moved" marker sits on each day the router moved its "not sure" line, so you can see what happened around a change. The second graph also needs two days.
+
 Then, in order:
 
 - "What happened today": plain sentences with the counts, and where the "not sure" line sits now.
+- "How often does the costly model get used?" (from 0.9.5): the share of prompts sent to Opus because Jev was not sure, over the busy days on the page. If the line has moved, it gives that share up to and including the day of the last move and the share on the days since, with "too few days to be sure" when fewer than seven days have passed. It says whether the move should send fewer or more prompts to Opus. It counts prompts, not dollars: the page cannot see your bill.
 - "Does Jev know when it is right?": checked prompts grouped by Jev's stated confidence, in bands such as "Under 30% sure" and "90% or more sure", each with the share Opus agreed with and a bar, and one sentence on whether "sure" means right.
 - "Every day": the last 14 UTC days with prompts, those Jev was not sure about, those double-checked, the share Opus agreed with, and any change to the line. Days with no activity are hidden.
 - "Does Jev learn from this?" (from 0.9.2): says plainly that it does not, that only the router's own "not sure" line adjusts itself, and what that line last did and why.
