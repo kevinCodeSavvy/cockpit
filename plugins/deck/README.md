@@ -58,6 +58,7 @@ Mods need Claude Code 2.1.286 or later. To try it from a clone without installin
 | **5h and 7d limits** | Percent used, a live countdown to each reset, how fast you're burning it (`+12%/h`), and when you'd hit the limit at that pace (`⚠4:12pm`) | Your plan's rate limits, no `/usage` needed |
 | **Spend** | What this session has cost so far; with `/deck cost on` also today and this month, added up across sessions | Your session's cost ledger. Dollars are API-equivalent on a subscription |
 | **Tokens** | Tokens this session has used, split into in (with cache reads and writes) and out, added up across every response including subagents; `/deck tokens off` hides it | The engine's per-response usage |
+| **Optimizer** | The session's quality grade and score (`S 91 · cache hit 91%`); below grade A it also names what is dragging the score down. S and A green, B green, C amber, D and F red. Shown only if the [token-optimizer](https://github.com/alexgreensh/token-optimizer) plugin is installed; `/deck optimizer off` hides it | The file token-optimizer writes for this session (`~/.claude/token-optimizer/quality-cache-<session>.json`). Deck only reads it. No plugin or no file yet: no row |
 | **Cache** | Time left before the prompt cache goes cold and what a cold re-write would cost; red with `⚠ 45s` in the last minute | The last request's time and the context size, priced at the model's cache-write rate |
 | **Model route** | Which model and effort a router picked, and how sure it was | [jev-model-router](#model-routing), if installed |
 | **Clock and weather** | Local time and the weather where you are | Open-Meteo, no key |
@@ -104,7 +105,7 @@ On Desktop it's an animated SVG. In the terminal it's drawn as a picture, so it 
 | `/deck`, `0` in an empty prompt, or the **Deck** footer button | Collapse or expand |
 | `/deck style` | Style picker with live previews (keys 1–6) |
 | `/deck style <name>` | `segments`, `line`, `solid`, `dots`, `pixel`, `spark` |
-| `/deck <section> on\|off` | `plans agents context limits spend tokens cache route pet clock weather all` |
+| `/deck <section> on\|off` | `plans agents context limits spend tokens optimizer cache route pet clock weather all` |
 | `/deck city <name>` | Weather city |
 | `/deck panel [off]` | Open Deck in a panel of its own, always expanded; it stays on, reopening each session and whenever it goes missing, until `off` |
 | `/deck version` | Show which Deck version is running |

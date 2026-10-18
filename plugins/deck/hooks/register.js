@@ -10,10 +10,10 @@ import { TERMINAL_STYLES, TERMINAL_STYLE_NAMES, terminalBar, terminalMini } from
 import { DESKTOP_STYLES, DESKTOP_STYLE_NAMES, desktopTrack, stripsSvg, stripsHeight } from './styles-desktop.js'
 import { createPet, stepPet, petX, petLaneSvg, petFrame, PET_RASTER } from './pet.js'
 
-const SECTIONS = ['plans', 'agents', 'context', 'limits', 'spend', 'tokens', 'cache', 'route', 'pet', 'clock', 'weather']
+const SECTIONS = ['plans', 'agents', 'context', 'limits', 'spend', 'tokens', 'optimizer', 'cache', 'route', 'pet', 'clock', 'weather']
 
 const DEFAULT_PREFS = {
-  show: { plans: true, agents: true, context: true, limits: true, spend: true, tokens: true, cache: true, route: true, pet: true, clock: true, weather: false },
+  show: { plans: true, agents: true, context: true, limits: true, spend: true, tokens: true, optimizer: true, cache: true, route: true, pet: true, clock: true, weather: false },
   always: true, // start every session expanded, whatever the last one left behind
   cacheTtl: '1h', // how long the prompt cache lives: '1h' (subscription) or '5m' (API key)
   style: { terminal: 'solid', desktop: 'pixel' },
@@ -37,7 +37,7 @@ const FOLD_MS = 5000
 const MAX_STRIPS = 4
 const ASK_DELAY_MS = 600
 const TRACK_H = 22
-const VERSION = '0.4.17' // keep in step with .claude-plugin/plugin.json (a test checks)
+const VERSION = '0.4.18' // keep in step with .claude-plugin/plugin.json (a test checks)
 const RIGHT_W = 92
 const TITLE_MAX_CH = 22 // a long prompt as a bar title would squeeze every track
 const TITLE_MAX_PX = 160
@@ -828,6 +828,10 @@ function collectRows(now) {
   }
   if (prefs.show.spend) rows.push(spendRow())
   if (prefs.show.tokens) rows.push(tokensRow())
+  if (prefs.show.optimizer) {
+    const o = optimizerRow(now)
+    if (o) rows.push(o)
+  }
   if (prefs.show.cache) rows.push(cacheRow(now))
   return rows
 }
@@ -870,6 +874,60 @@ function tokensRow() {
     right: fmtK(total),
     short: fmtK(total) + ' tok',
     section: 'tokens',
+    hist: [],
+    rate: '',
+  }
+}
+
+// the token-optimizer plugin's own quality score for this session, read from the file it writes.
+// Soft dependency: no plugin, no file, or an unreadable one means no row, never an error.
+const OPT_STALE_MS = 10 * 60_000
+let optimizer = null
+async function refreshOptimizer($) {
+  try {
+    const home = await $.env.get('HOME')
+    if (!home || !sessionId || !/^[0-9a-f-]{8,64}$/i.test(sessionId)) {
+      optimizer = null
+      return
+    }
+    const d = JSON.parse(await $.fs.read(home + '/.claude/token-optimizer/quality-cache-' + sessionId + '.json'))
+    const score = Number(d.score)
+    const grade = typeof d.grade === 'string' ? d.grade.toUpperCase() : ''
+    if (!Number.isFinite(score) || !'SABCDF'.includes(grade) || grade.length !== 1) throw new Error('unexpected shape')
+    const at = Date.parse(d.timestamp)
+    optimizer = {
+      score,
+      grade,
+      at: Number.isFinite(at) ? at : 0,
+      drag: typeof d.top_drag?.label === 'string' ? d.top_drag.label : '',
+      hit: typeof d.cache_hit_rate === 'number' ? d.cache_hit_rate : null,
+    }
+  } catch {
+    optimizer = null
+  }
+}
+
+// S and A are green, B green too but flagged as a watch, C amber, D and F red
+const OPT_STYLE = { S: 'done', A: 'done', B: 'ok', C: 'warn', D: 'hot', F: 'hot' }
+function optimizerRow(now) {
+  const o = optimizer
+  if (!o) return null
+  const age = o.at ? now - o.at : 0
+  const stale = age > OPT_STALE_MS
+  const lowish = 'BCDF'.includes(o.grade)
+  const name = o.grade + ' ' + Math.round(o.score) + (o.hit != null ? ' · cache hit ' + Math.round(o.hit * 100) + '%' : '')
+  return {
+    id: 'optimizer',
+    kind: 'meter',
+    style: stale ? 'run' : OPT_STYLE[o.grade],
+    title: 'Optimizer',
+    pct: o.score,
+    marks: [],
+    name,
+    count: '',
+    right: stale ? 'updated ' + (age < 3600_000 ? Math.round(age / 60_000) + 'm' : Math.round(age / 3600_000) + 'h') + ' ago' : lowish && o.drag ? o.drag : '',
+    short: 'opt ' + o.grade + ' ' + Math.round(o.score),
+    section: 'optimizer',
     hist: [],
     rate: '',
   }
@@ -1705,6 +1763,7 @@ export function register(on) {
       sessionId = await $.session.id()
     } catch {}
     await loadSpend($)
+    await refreshOptimizer($)
     refreshWeather($).catch(() => {})
 
     $.clock.every(150, async () => {
@@ -1719,6 +1778,7 @@ export function register(on) {
       const ticking = secondTick && (prefs.show.clock || rows.some((r) => r.kind === 'meter' || r.strips))
       if (petMoved || terminalAnim || ticking) $.ui.invalidate('ui.render')
       if (frame % 14 === 0) await syncAgents($)
+      if (frame % 200 === 0) await refreshOptimizer($)
       if (prefs.panel && frame % 20 === 0) await ensurePanel($)
       if (frame % 400 === 0) await refreshUsage($)
       else if (frame % 100 === 0) await noteUsage($)

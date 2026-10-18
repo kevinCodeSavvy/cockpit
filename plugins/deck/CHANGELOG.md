@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.18
+
+- New Optimizer row: the session's quality grade and score from the [token-optimizer](https://github.com/alexgreensh/token-optimizer) plugin, with the cache hit rate, and what is dragging the score down when the grade is below A. Grades: S and A green, B green with a watch, C amber, D and F red. Toggle with `/deck optimizer on|off`.
+- It is a soft dependency: Deck only reads the file token-optimizer writes (`~/.claude/token-optimizer/quality-cache-<session>.json`). Without the plugin, or before it has written the file, the row is simply not shown. Nothing is run or installed.
+
 ## 0.4.17
 
 - `/deck collapsed rings` now shows the token total as `1.2M tokens`, shorter than before so the row fits. The in/out split stays in the expanded Tokens row.
