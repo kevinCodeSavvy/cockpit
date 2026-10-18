@@ -1,7 +1,7 @@
 import { describe, expect, mock, test, tier } from 'claude-code/testing'
 import type { CommandRunInput, On, SessionStartInput } from 'claude-code'
 
-import { agreementChart, buildDashboard, confidenceNote, dayRows, escapeHtml, lastCutoffChange, standing, trendOf } from '../hooks/dashboard.ts'
+import { agreementChart, buildDashboard, confidenceNote, dayRows, escapeHtml, lastCutoffChange, spendNote, standing, sureChart, trendOf } from '../hooks/dashboard.ts'
 import type { DashboardInput } from '../hooks/dashboard.ts'
 import { DAY, NEW_STATE } from '../hooks/tune.ts'
 
@@ -101,6 +101,33 @@ test('the agreement line has one point per day with checks, oldest first, and wa
   expect(svg.indexOf('04-09')).toBeLessThan(svg.indexOf('04-11'))
   expect(agreementChart(dayRows(input({ log: [record(0, 0.8, 'fast', 'fast')] })))).toContain('appears once two different days')
   expect(buildDashboard(input({ log }))).toContain('<polyline')
+})
+
+test('the "how sure" line marks the day the router moved its line, and waits for two days', () => {
+  const stats = {
+    [key(2)]: { prompts: 10, unsure: 3, confSum: 6, confN: 10 },
+    [key(1)]: { prompts: 10, unsure: 1, confSum: 7, confN: 10 },
+  }
+  const trail = [{ at: (DAY_INDEX - 1) * DAY + 5, action: 'lower' as const, from: 0.3, to: 0.25, reason: 'x' }]
+  const svg = sureChart(dayRows(input({ stats, trail })))
+  expect(svg.match(/<circle/g)?.length).toBe(2)
+  expect(svg).toContain('60% sure on average (10 prompts)')
+  expect(svg.match(/class="mark"/g)?.length).toBe(1)
+  expect(sureChart(dayRows(input({ stats: { [key(0)]: stats[key(1)] } })))).toContain('appears once two different days')
+})
+
+test('the spending note compares before and since the line moved, and claims prompts not dollars', () => {
+  const stats = {
+    [key(2)]: { prompts: 100, unsure: 10, confSum: 60, confN: 100 },
+    [key(0)]: { prompts: 100, unsure: 5, confSum: 60, confN: 100 },
+  }
+  const trail = [{ at: (DAY_INDEX - 1) * DAY + 5, action: 'lower' as const, from: 0.3, to: 0.25, reason: 'x' }]
+  const note = spendNote(dayRows(input({ stats, trail })), trail)
+  expect(note).toContain('<b>8%</b> of prompts (15 of 200)')
+  expect(note).toContain('that was <b>10%</b>; on the day since it is <b>5%</b> (too few days to be sure)')
+  expect(note).toContain('cannot see your bill')
+  expect(spendNote(dayRows(input({ stats })), [])).not.toContain('Before the line')
+  expect(spendNote(dayRows(input({ stats: {} })), [])).toBe('Nothing to count yet.')
 })
 
 test('the trend compares the older half of the checks with the newer half', () => {

@@ -181,44 +181,111 @@ export function lastCutoffChange(trail: readonly AuditEntry[]): string {
 /** Chart size and margins, in SVG units. */
 const CHART = { w: 640, h: 180, left: 40, right: 16, top: 12, bottom: 28 }
 
-/**
- * Daily agreement with Opus as an inline SVG line, oldest day on the left, or
- * a one-line note when fewer than two days have checks. A line rising means
- * Jev is improving. Each point's tooltip gives its day and counts.
- */
-export function agreementChart(rows: readonly DayRow[]): string {
-  const days = rows
-    .filter((r) => r.agree + r.disagree > 0)
-    .reverse()
-    .map((r) => ({ date: r.date, agree: r.agree, total: r.agree + r.disagree }))
-  if (days.length < 2) {
-    return '<p class="sub">The line appears once two different days have checked prompts.</p>'
-  }
+interface Point {
+  date: string
+  rate: number
+  tip: string
+  /** The router moved its "not sure" line on this day. */
+  moved: boolean
+}
+
+/** A 0–100% line over days, oldest on the left, as inline SVG. Needs at least two points. */
+function plot(points: readonly Point[], label: string): string {
   const { w, h, left, right, top, bottom } = CHART
-  const x = (i: number) => left + ((w - left - right) * i) / (days.length - 1)
+  const x = (i: number) => left + ((w - left - right) * i) / (points.length - 1)
   const y = (rate: number) => top + (h - top - bottom) * (1 - rate)
-  const points = days.map((d, i) => ({ ...d, cx: x(i), cy: y(d.agree / d.total) }))
+  const placed = points.map((p, i) => ({ ...p, cx: x(i), cy: y(p.rate) }))
   const grid = [0, 0.5, 1]
     .map(
       (g) =>
         `<line x1="${left}" x2="${w - right}" y1="${y(g)}" y2="${y(g)}" class="grid"/><text x="${left - 6}" y="${y(g) + 4}" text-anchor="end" class="axis">${Math.round(100 * g)}%</text>`,
     )
     .join('')
-  const ends = [points[0], points[points.length - 1]] as const
+  const marks = placed
+    .filter((p) => p.moved)
+    .map(
+      (p) =>
+        `<line x1="${p.cx}" x2="${p.cx}" y1="${top}" y2="${h - bottom}" class="mark"/><text x="${p.cx + 4}" y="${top + 10}" class="axis mark-label">line moved</text>`,
+    )
+    .join('')
+  const ends = [placed[0], placed[placed.length - 1]] as const
   const labels = ends
     .map(
       (p, i) =>
         `<text x="${p.cx}" y="${h - 8}" text-anchor="${i === 0 ? 'start' : 'end'}" class="axis">${p.date.slice(5)}</text>`,
     )
     .join('')
-  const dots = points
-    .map(
-      (p) =>
-        `<circle cx="${p.cx}" cy="${p.cy}" r="4" class="dot"><title>${p.date}: ${share(p.agree, p.total)} agreed (${p.agree} of ${p.total})</title></circle>`,
-    )
+  const dots = placed
+    .map((p) => `<circle cx="${p.cx}" cy="${p.cy}" r="4" class="dot"><title>${p.tip}</title></circle>`)
     .join('')
-  const line = points.map((p) => `${p.cx.toFixed(1)},${p.cy.toFixed(1)}`).join(' ')
-  return `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Share of checked prompts where Opus agreed with Jev, by day">${grid}<polyline points="${line}" class="line"/>${dots}${labels}</svg>`
+  const line = placed.map((p) => `${p.cx.toFixed(1)},${p.cy.toFixed(1)}`).join(' ')
+  return `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${label}">${grid}${marks}<polyline points="${line}" class="line"/>${dots}${labels}</svg>`
+}
+
+/**
+ * Daily agreement with Opus as an inline SVG line, oldest day on the left, or
+ * a one-line note when fewer than two days have checks. A line rising means
+ * Jev is improving. Each point's tooltip gives its day and counts.
+ */
+export function agreementChart(rows: readonly DayRow[]): string {
+  const days = rows.filter((r) => r.agree + r.disagree > 0).reverse()
+  if (days.length < 2) {
+    return '<p class="sub">The line appears once two different days have checked prompts.</p>'
+  }
+  return plot(
+    days.map((r) => {
+      const total = r.agree + r.disagree
+      return {
+        date: r.date,
+        rate: r.agree / total,
+        tip: `${r.date}: ${share(r.agree, total)} agreed (${r.agree} of ${total})`,
+        moved: r.moves.length > 0,
+      }
+    }),
+    'Share of checked prompts where Opus agreed with Jev, by day',
+  )
+}
+
+/**
+ * How sure Jev said it was, averaged per day, with a marker on each day the
+ * router moved its "not sure" line. This is Jev's own claim, not a score of
+ * whether it was right; the agreement line above is the check on that.
+ */
+export function sureChart(rows: readonly DayRow[]): string {
+  const days = rows.filter((r) => r.avgConfidence !== null).reverse()
+  if (days.length < 2) {
+    return '<p class="sub">The line appears once two different days have prompts.</p>'
+  }
+  return plot(
+    days.map((r) => ({
+      date: r.date,
+      rate: r.avgConfidence as number,
+      tip: `${r.date}: Jev was ${pct(r.avgConfidence as number)} sure on average (${r.prompts} prompts)`,
+      moved: r.moves.length > 0,
+    })),
+    'How sure Jev said it was on average, by day',
+  )
+}
+
+/**
+ * The share of prompts sent to the costly model because Jev was unsure, before
+ * and since the router last moved its line. The page cannot see a bill, so it
+ * says what it counted instead of promising a saving.
+ */
+export function spendNote(rows: readonly DayRow[], trail: readonly AuditEntry[]): string {
+  const busy = rows.filter((r) => r.prompts > 0)
+  const all = (list: readonly DayRow[]) => list.reduce((n, r) => n + r.prompts, 0)
+  const sent = (list: readonly DayRow[]) => list.reduce((n, r) => n + r.escalated, 0)
+  if (busy.length === 0) return 'Nothing to count yet.'
+  const last = trail[trail.length - 1]
+  const lastDay = last === undefined ? null : new Date(last.at).toISOString().slice(0, 10)
+  const since = lastDay === null ? [] : busy.filter((r) => r.date > (lastDay as string))
+  const before = lastDay === null ? busy : busy.filter((r) => r.date <= (lastDay as string))
+  const base = `Over the last ${busy.length} busy days, Jev sent <b>${share(sent(busy), all(busy))}</b> of prompts (${sent(busy)} of ${all(busy)}) to Opus because it was not sure.`
+  if (last === undefined || since.length === 0 || before.length === 0) return base
+  const moved = last.to < last.from ? 'lowered' : 'raised'
+  const effect = last.to < last.from ? 'fewer' : 'more'
+  return `${base} Up to and including ${lastDay}, when the line was ${moved}, that was <b>${share(sent(before), all(before))}</b>; on the ${since.length === 1 ? 'day' : `${since.length} days`} since it is <b>${share(sent(since), all(since))}</b>${since.length < 7 ? ' (too few days to be sure)' : ''}. A ${moved} line should send ${effect} prompts to Opus. Opus costs more per prompt than the smaller models, so a lower share means less of that extra cost. This page cannot see your bill, so it counts prompts, not dollars.`
 }
 
 const CSS = `
@@ -243,7 +310,7 @@ tr:last-child td{border-bottom:0}td.z{color:var(--dim)}td.moves{text-align:left;
 .bar{display:inline-block;height:8px;background:var(--bar);border-radius:3px;vertical-align:middle;margin-left:6px}
 .wrap{overflow-x:auto}
 ul{margin:6px 0;padding-left:20px;font-size:13px}li{margin:3px 0}
-.chart{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:16px}.chart svg{width:100%;height:auto;display:block}.line{fill:none;stroke:var(--blue);stroke-width:2.5}.dot{fill:var(--blue)}.grid{stroke:var(--line)}.axis{fill:var(--dim);font-size:11px}
+.chart{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:16px}.chart svg{width:100%;height:auto;display:block}.line{fill:none;stroke:var(--blue);stroke-width:2.5}.dot{fill:var(--blue)}.grid{stroke:var(--line)}.mark{stroke:var(--amber);stroke-dasharray:4 3;stroke-width:1.5}.mark-label{fill:var(--amber)}.axis{fill:var(--dim);font-size:11px}
 details{margin-top:28px}summary{cursor:pointer;font-size:16px;font-weight:600}
 `
 
@@ -346,6 +413,15 @@ export function buildDashboard(input: DashboardInput): string {
 ${agreementChart(rows)}
 <div class="lbl">Each dot is one day. Higher is better. A line that goes up means Jev and Opus agree more often.</div>
 </div>
+
+<h2>Day by day: how sure Jev said it was</h2>
+<div class="chart">
+${sureChart(rows)}
+<div class="lbl">Each dot is one day's average. This is Jev's own claim, not proof it was right. The orange dashed line marks a day the router moved its "not sure" line.</div>
+</div>
+
+<h2>How often does the costly model get used?</h2>
+<p class="sub">${spendNote(rows, input.trail)}</p>
 
 <h2>Does Jev know when it is right?</h2>
 <p class="sub">${confidenceNote(input.log) ?? 'Not enough double-checks yet to say.'}</p>
