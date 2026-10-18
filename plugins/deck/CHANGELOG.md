@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.19
+
+- `/deck collapsed rings` now ends with an optimizer ring: the grade letter in a ring filled to the score, in the grade's colour, with the score beside it (`S 91 optimizer`). Chips and text already showed the Optimizer row through each row's short form, so the README and `assets/styles.svg` now show it there too.
+- Like the row, it appears only when the token-optimizer plugin has written its file for the session.
+
 ## 0.4.18
 
 - New Optimizer row: the session's quality grade and score from the [token-optimizer](https://github.com/alexgreensh/token-optimizer) plugin, with the cache hit rate, and what is dragging the score down when the grade is below A. Grades: S and A green, B green with a watch, C amber, D and F red. Toggle with `/deck optimizer on|off`.

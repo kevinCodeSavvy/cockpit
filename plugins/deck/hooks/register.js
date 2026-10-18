@@ -37,7 +37,7 @@ const FOLD_MS = 5000
 const MAX_STRIPS = 4
 const ASK_DELAY_MS = 600
 const TRACK_H = 22
-const VERSION = '0.4.18' // keep in step with .claude-plugin/plugin.json (a test checks)
+const VERSION = '0.4.19' // keep in step with .claude-plugin/plugin.json (a test checks)
 const RIGHT_W = 92
 const TITLE_MAX_CH = 22 // a long prompt as a bar title would squeeze every track
 const TITLE_MAX_PX = 160
@@ -928,6 +928,8 @@ function optimizerRow(now) {
     right: stale ? 'updated ' + (age < 3600_000 ? Math.round(age / 60_000) + 'm' : Math.round(age / 3600_000) + 'h') + ' ago' : lowish && o.drag ? o.drag : '',
     short: 'opt ' + o.grade + ' ' + Math.round(o.score),
     section: 'optimizer',
+    grade: o.grade,
+    score: Math.round(o.score),
     hist: [],
     rate: '',
   }
@@ -1129,7 +1131,9 @@ function ringSvg(pct, color, icon) {
       ? `<text x="11" y="15" text-anchor="middle" style="font:600 10px ui-sans-serif,system-ui,sans-serif;fill:${color}">$</text>`
       : icon === 'tok'
         ? `<text x="11" y="14.5" text-anchor="middle" style="font:600 8px ui-sans-serif,system-ui,sans-serif;fill:${color}">T</text>`
-        : icon === 'week'
+        : icon && icon.startsWith('g:')
+          ? `<text x="11" y="14.5" text-anchor="middle" style="font:700 9px ui-sans-serif,system-ui,sans-serif;fill:${color}">${icon.slice(2)}</text>`
+          : icon === 'week'
         ? `<rect x="7.2" y="7.6" width="7.6" height="7" rx="1.2" fill="none" stroke="${color}" stroke-width="1.3"/><rect x="7.2" y="7.6" width="7.6" height="2" fill="${color}"/>`
         : `<path d="M11 7.2V11l2.4 1.6" fill="none" stroke="${color}" stroke-width="1.4" stroke-linecap="round"/>`
   return (
@@ -1471,7 +1475,7 @@ async function deckView($, e, next) {
   const extrasText = Box({ flexShrink: 0, children: [Text({ color: MUTED, children: [extras.join('  ·  ')] })] })
   const spacer = Box({ flexGrow: 1, children: [] })
 
-  // ----- collapsed, rings: a ring per limit, its reset, spend and tokens -----
+  // ----- collapsed, rings: a ring per limit, its reset, spend, tokens and the optimizer grade -----
   if ((!open || !rows.length) && prefs.collapsed === 'rings') {
     const items = []
     const ask = rows.find((r) => r.state === 'needs_input')
@@ -1519,6 +1523,23 @@ async function deckView($, e, next) {
             desktop ? Svg({ alt: 'tokens', width: 22, height: 22, source: ringSvg(100, STYLE.done.desk, 'tok') }) : Text({ color: STYLE.done.fill, children: ['T'] }),
             Text({ color: STYLE.done.fill, bold: true, wrap: 'truncate', children: [tok.right] }),
             Text({ color: MUTED, wrap: 'truncate', children: ['tokens'] }),
+          ],
+        }),
+      )
+    }
+    const opt = rows.find((r) => r.id === 'optimizer')
+    if (opt) {
+      const st = STYLE[opt.style]
+      items.push(
+        Box({
+          flexDirection: 'row',
+          flexShrink: 0,
+          columnGap: 1,
+          alignItems: 'center',
+          children: [
+            desktop ? Svg({ alt: 'optimizer ' + opt.grade, width: 22, height: 22, source: ringSvg(opt.score, st.desk, 'g:' + opt.grade) }) : Text({ color: st.fill, children: [opt.grade] }),
+            Text({ color: st.fill, bold: true, wrap: 'truncate', children: [String(opt.score)] }),
+            Text({ color: MUTED, wrap: 'truncate', children: ['optimizer'] }),
           ],
         }),
       )

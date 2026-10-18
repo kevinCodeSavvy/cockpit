@@ -66,7 +66,7 @@ Deck's bars come in six styles: `pixel`, `segments`, `line`, `solid`, `dots` and
 |---|---|
 | `/deck` | Collapse or expand Deck |
 | `/deck style` | Pick the bar style with live previews; `/deck style <name>` sets it directly: `pixel`, `segments`, `line`, `solid`, `dots` or `spark`. Desktop and terminal each keep their own choice |
-| `/deck collapsed chips\|text\|rings` | How Deck looks when collapsed: chips with mini bars, one plain line, or limit rings |
+| `/deck collapsed chips\|text\|rings` | How Deck looks when collapsed: chips with mini bars, one plain line, or limit rings; all three include the Optimizer grade when that row is on |
 | `/deck size compact\|roomy` | Row spacing on Desktop (compact is the default) |
 | `/deck always on\|off` | Open expanded in every new session (default on) |
 | `/deck panel [off]` | Open Deck in a panel of its own, always expanded (terminal and Desktop; the VS Code extension draws none yet). It stays on, reopening each session and whenever it goes missing, until `/deck panel off` |
