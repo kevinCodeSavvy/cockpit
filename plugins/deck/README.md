@@ -80,7 +80,7 @@ When something needs you (a permission prompt, a question, a reply ending in `?`
 Pick how the bars look with `/deck style`, a picker with live previews. Each app (Desktop and terminal) keeps its own choice.
 
 <p align="center">
-  <img src="assets/styles.svg" alt="Every Deck bar style (pixel, segments, line, solid, dots, spark) on Desktop and in the terminal, and the three collapsed looks: chips, text and rings." width="860">
+  <img src="assets/styles.svg" alt="Every Deck bar style (pixel, segments, line, solid, dots, spark) on Desktop and in the terminal, and the three collapsed looks: chips, text (with the token-optimizer grade) and rings." width="860">
 </p>
 
 | Style | CLI | Desktop |
