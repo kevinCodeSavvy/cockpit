@@ -37,7 +37,7 @@ const FOLD_MS = 5000
 const MAX_STRIPS = 4
 const ASK_DELAY_MS = 600
 const TRACK_H = 22
-const VERSION = '0.4.20' // keep in step with .claude-plugin/plugin.json (a test checks)
+const VERSION = '0.4.21' // keep in step with .claude-plugin/plugin.json (a test checks)
 const RIGHT_W = 92
 const TITLE_MAX_CH = 22 // a long prompt as a bar title would squeeze every track
 const TITLE_MAX_PX = 160
@@ -951,12 +951,12 @@ function switchesRow(now) {
     id: 'switches',
     kind: 'meter',
     style: 'run',
-    title: 'Switches',
+    title: 'Jev model switches',
     pct: (w.switched / total) * 100,
     marks: [],
     name: w.switched + ' switched · ' + w.kept + ' kept',
     count: '',
-    right: ago ? 'newest ' + ago + ' ago' : '',
+    right: ago ? ago + ' ago' : '',
     short: 'sw ' + w.switched + '/' + w.kept,
     section: 'switches',
     hist: [],
@@ -977,12 +977,13 @@ function optimizerRow(now) {
     id: 'optimizer',
     kind: 'meter',
     style: stale ? 'run' : OPT_STYLE[o.grade],
-    title: 'Optimizer',
+    title: 'Token optimizer score',
     pct: o.score,
     marks: [],
     name,
     count: '',
-    right: stale ? 'updated ' + (age < 3600_000 ? Math.round(age / 60_000) + 'm' : Math.round(age / 3600_000) + 'h') + ' ago' : lowish && o.drag ? o.drag : '',
+    // the right column is about 12 characters wide, so a long reason is cut
+    right: stale ? 'stale ' + (age < 3600_000 ? Math.round(age / 60_000) + 'm' : Math.round(age / 3600_000) + 'h') : lowish && o.drag ? trunc(o.drag, 12) : '',
     short: 'opt ' + o.grade + ' ' + Math.round(o.score),
     section: 'optimizer',
     grade: o.grade,

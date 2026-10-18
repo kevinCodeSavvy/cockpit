@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.21
+
+- The Optimizer row is now titled "Token optimizer score" and the Switches row "Jev model switches", so the left column says what each one is. Longer than about 22 characters would be cut off and squeeze the bars, so these two are the longest that fit.
+- Their right-hand text is shorter so it no longer runs over the bar label: the Switches age reads `40m ago` (was `newest 40m ago`), a stale score reads `stale 12m`, and the optimizer's reason for a grade below A is cut to 12 characters.
+- The command names are unchanged: `/deck optimizer` and `/deck switches`.
+
 ## 0.4.20
 
 - New Switches row: how many times the Jev router switched your main chat's model versus kept it (`61 switched · 39 kept`), with how long ago the newest one was. It reads the router's own switch log (its newest 100 judged switches, across sessions). Toggle with `/deck switches on|off`.
