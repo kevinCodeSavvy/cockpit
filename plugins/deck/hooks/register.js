@@ -37,7 +37,7 @@ const FOLD_MS = 5000
 const MAX_STRIPS = 4
 const ASK_DELAY_MS = 600
 const TRACK_H = 22
-const VERSION = '0.4.22' // keep in step with .claude-plugin/plugin.json (a test checks)
+const VERSION = '0.4.23' // keep in step with .claude-plugin/plugin.json (a test checks)
 const RIGHT_W = 92
 const TITLE_MAX_CH = 22 // a long prompt as a bar title would squeeze every track
 const TITLE_MAX_PX = 160
@@ -629,6 +629,32 @@ function readRouteLog(text) {
   return true
 }
 
+// Whether the model switch behind the current route re-sent the conversation, from the router's
+// newest switch-log entry. The router stamps it with what the API reported writing to the new
+// model's cache; until then its own estimate shows, marked with ~. Returns { short, long } or null.
+// short fits the 12-column right-hand cell: "↻108k", "↻~108k", "warm", "held 184k".
+function cacheMark(rec, r) {
+  if (!rec || !r || !r.at || typeof rec.at !== 'number') return null
+  if (rec.at < r.at - 1000 || rec.at - r.at > 120_000) return null
+  const k = (n) => Math.round(n / 1000) + 'k'
+  const num = (n) => typeof n === 'number' && Number.isFinite(n) && n >= 0
+  if (rec.allowed === false) {
+    const size = num(rec.context) ? ' ' + k(rec.context) : ''
+    return { short: 'held' + size, long: 'held, kept the warm model' + (size ? ', would have re-sent ' + k(rec.context) : '') }
+  }
+  if (rec.allowed !== true) return null
+  if (num(rec.written) && num(rec.read)) {
+    const resent = rec.written >= 5000 && rec.written >= (rec.written + rec.read) * 0.5
+    return resent ? { short: '↻' + k(rec.written), long: 're-sent ' + k(rec.written) + ' tokens (measured)' } : { short: 'warm', long: 'cache warm (measured)' }
+  }
+  if (rec.cold === true) {
+    const size = num(rec.context) ? k(rec.context) : ''
+    return { short: '↻~' + size, long: 'likely re-sent' + (size ? ' ' + size : '') + ' (estimated)' }
+  }
+  if (rec.cold === false) return { short: '~warm', long: 'cache likely warm (estimated)' }
+  return null
+}
+
 function routeRow() {
   if (!prefs.show.route || !route) return null
   const from = shortModel(seen.model || sessionModel) || 'session'
@@ -662,6 +688,7 @@ function routeRow() {
   // only a model the router actually switched to counts as cheaper or deeper
   const dir = !route.model ? '=' : toRank != null && fromRank != null ? (toRank < fromRank ? '↓' : toRank > fromRank ? '↑' : '=') : '='
   const unapplied = want !== to
+  const mark = cacheMark(switches?.latest, route)
   return {
     id: 'route',
     kind: 'route',
@@ -678,7 +705,8 @@ function routeRow() {
     unsure: !!route.unsure,
     unapplied,
     dir,
-    right: dir === '↓' ? '↓ cheaper' : dir === '↑' ? '↑ deeper' : '= kept',
+    right: mark ? dir + ' ' + mark.short : dir === '↓' ? '↓ cheaper' : dir === '↑' ? '↑ deeper' : '= kept',
+    cache: mark ? mark.long : '',
     short: '⇄ ' + to + (effort ? '·' + effort : ''),
     pct: 0,
     marks: [],
@@ -934,14 +962,18 @@ async function refreshSwitches($) {
     let switched = 0
     let kept = 0
     let newest = 0
+    let latest = null
     for (const r of log) {
       if (typeof r?.at !== 'number' || r.at < sessionStartedAt) continue
       if (r?.allowed === true) switched++
       else if (r?.allowed === false) kept++
       else continue
-      if (typeof r.at === 'number' && r.at > newest) newest = r.at
+      if (typeof r.at === 'number' && r.at > newest) {
+        newest = r.at
+        latest = r
+      }
     }
-    switches = { switched, kept, newest }
+    switches = { switched, kept, newest, latest }
   } catch {
     switches = null
   }
@@ -1430,7 +1462,7 @@ function statusText() {
       continue
     }
     if (r.kind === 'route') {
-      lines.push('⇄ Model route — ' + r.from + ' ' + (r.dir === '=' ? '=' : '→') + ' ' + r.to + (r.effort ? ' · effort ' + r.effort : '') + ' · jev ' + r.tier + (r.conf != null ? ' ' + r.conf.toFixed(2) : '') + (r.unsure ? ', unsure → ' + r.want : '') + (r.unapplied ? ', suggested ' + r.want + ', not applied' : '') + ' (' + r.right + ')')
+      lines.push('⇄ Model route — ' + r.from + ' ' + (r.dir === '=' ? '=' : '→') + ' ' + r.to + (r.effort ? ' · effort ' + r.effort : '') + ' · jev ' + r.tier + (r.conf != null ? ' ' + r.conf.toFixed(2) : '') + (r.unsure ? ', unsure → ' + r.want : '') + (r.unapplied ? ', suggested ' + r.want + ', not applied' : '') + ' (' + (r.dir === '↓' ? 'cheaper' : r.dir === '↑' ? 'deeper' : 'kept') + (r.cache ? ' · ' + r.cache : '') + ')')
       continue
     }
     lines.push(STYLE[r.style].glyph + ' ' + r.title + ' — ' + r.name + (r.count ? ' ' + r.count : '') + (r.right ? ' (' + r.right + ')' : ''))
@@ -1864,7 +1896,11 @@ export function register(on) {
       const terminalAnim = sawTerminal && frame % 2 === 0 && (rows.some((r) => r.animating) || prefs.show.pet)
       const ticking = secondTick && (prefs.show.clock || rows.some((r) => r.kind === 'meter' || r.strips))
       if (petMoved || terminalAnim || ticking) $.ui.invalidate('ui.render')
-      if (frame % 14 === 0) await syncAgents($)
+      if (frame % 14 === 0) {
+        await syncAgents($)
+        // the router stamps a switch with the API's cache figures once the first request returns
+        if (route && now - route.at < 120_000) await refreshSwitches($)
+      }
       if (frame % 200 === 0) {
         await refreshOptimizer($)
         await refreshSwitches($)

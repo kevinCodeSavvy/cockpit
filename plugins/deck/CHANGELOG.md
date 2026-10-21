@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.23
+
+- The Model route row now says whether a model switch re-sent the conversation: `↑ ↻108k` (the new model's cache was cold and the API wrote 108k tokens to it), `↓ warm` (it read from a warm cache), `= held 184k` (the router kept the current model rather than re-send 184k). The figure is what the API reported for the first request after the switch; until it arrives, the router's own estimate shows with a `~` (`↻~108k`, `~warm`). `/deck status` spells it out.
+- Needs jev-model-router 0.9.7, which records the figures. With an older router, or with no switch this turn, the row reads `cheaper`, `deeper` or `kept` as before.
+
 ## 0.4.22
 
 - The Jev model switches row now counts only this session. It used to show the router's whole saved log (its newest 100 judged switches across every session), so it never changed between sessions. It now starts at `0 switched · 0 kept` and counts entries stamped since the session began; the right-hand text reads `this session` until the first one.
