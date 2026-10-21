@@ -93,10 +93,10 @@ import {
   shadowRequest,
   wantsShadow,
 } from './shadow.ts'
-import { DEFAULT_CACHE_SETTINGS, judgeSwitch, tierOfModel } from './cache.ts'
+import { DEFAULT_CACHE_SETTINGS, isWarm, judgeSwitch, tierOfModel } from './cache.ts'
 import type { LastUsed } from './cache.ts'
 import { buildDashboard } from './dashboard.ts'
-import { appendSwitch, readSwitches, SWITCH_KEY } from './switchlog.ts'
+import { appendSwitch, readSwitches, recordMeasured, SWITCH_KEY } from './switchlog.ts'
 import { hintShown, KEY_HINT_KEY, keyHintText } from './keyhint.ts'
 import {
   appendAudit,
@@ -138,6 +138,19 @@ async function currentFloor(
     return effectiveFloor(configuredFloor, readState(await $.store.get(TUNE_STATE_KEY)), true)
   } catch {
     return configuredFloor
+  }
+}
+
+/**
+ * The context size the session reports now, or null when it has no figure yet
+ * or cannot answer. Zero is a figure: a new session really is empty.
+ */
+async function sessionContext($: EngineInterface): Promise<number | null> {
+  try {
+    const tokens = (await $.session.usage()).context.tokens
+    return typeof tokens === 'number' && Number.isFinite(tokens) && tokens >= 0 ? tokens : null
+  } catch {
+    return null
   }
 }
 
@@ -289,10 +302,16 @@ export const register: Register = (on, options) => {
     ttlMinutes: number('cacheTtlMinutes', DEFAULT_CACHE_SETTINGS.ttlMinutes),
     outputTokens: number('cacheOutputTokens', DEFAULT_CACHE_SETTINGS.outputTokens),
     gateUpgrades: flag('cacheGateUpgrades', DEFAULT_CACHE_SETTINGS.gateUpgrades),
+    lockAbove: number('cacheLockAbove', DEFAULT_CACHE_SETTINGS.lockAbove),
+    minStayTurns: number('cacheMinStayTurns', DEFAULT_CACHE_SETTINGS.minStayTurns),
   }
   // Input tokens of the last response, and when each model last served one.
   let contextTokens: number | null = null
   const lastUsed: LastUsed = {}
+  // A switch is held once for a context size nobody could give, then left alone.
+  let heldForUnknownSize = false
+  // Main-loop decisions since a switch was last applied; null before the first.
+  let turnsSinceSwitch: number | null = null
 
   // Store writes go one at a time: two overlapping read-modify-writes of the
   // same key would drop one of them.
@@ -511,27 +530,46 @@ export const register: Register = (on, options) => {
     }
 
     const decision = pending.take()
+    if (turnsSinceSwitch !== null) turnsSinceSwitch += 1
     const routing = route(decision, { model: e.model, effort: e.effort }, policy)
     const change: { model?: string; effort?: Effort } = {}
     // The main loop's `model` is sent to the API as written, so an alias
     // becomes its id here; a subagent's (agent.spawn) may stay an alias.
     let cacheNote = ''
+    // When a switch was applied, the record's timestamp, so the response can stamp it.
+    let switchedAt: number | null = null
     if (routeMainModel && routing.model) {
       const now = await $.clock.now()
       const from = tierOfModel(e.model, policy.tiers)
       const to = tierOfModel(routing.model, policy.tiers)
-      const verdict =
-        cacheAware && from && to
-          ? judgeSwitch({ from, to, contextTokens, lastUsed, now }, cacheSettings)
+      // The size comes from `session.measure`, which has not fired on a session's first turn;
+      // the session itself knows it, so ask before treating it as unknown.
+      if (contextTokens === null && cacheAware && from && to && from !== to) {
+        contextTokens = await sessionContext($)
+      }
+      const holdForUnknownSize =
+        contextTokens === null && cacheAware && !!from && !!to && from !== to && !heldForUnknownSize
+      if (holdForUnknownSize) heldForUnknownSize = true
+      const verdict = holdForUnknownSize
+        ? { allow: false, reason: `kept ${from}: context size unknown, holding the switch for one turn` }
+        : cacheAware && from && to
+          ? judgeSwitch(
+              { from, to, contextTokens, lastUsed, now, turnsSinceSwitch, urgent: isUnsure(decision, policy) },
+              cacheSettings,
+            )
           : { allow: true, reason: '' }
       if (from && to && from !== to) {
-        const record = { at: now, from, to, context: contextTokens, allowed: verdict.allow, reason: verdict.reason }
+        const cold = !isWarm(to, lastUsed, now, cacheSettings.ttlMinutes)
+        const record = { at: now, from, to, context: contextTokens, allowed: verdict.allow, reason: verdict.reason, cold, written: null, read: null }
+        if (verdict.allow) switchedAt = now
         void enqueue(async () => {
           await $.store.set(SWITCH_KEY, appendSwitch(await $.store.get(SWITCH_KEY), record))
         }).catch(() => undefined)
       }
-      if (verdict.allow) change.model = requestModelId(routing.model)
-      else cacheNote = ` · ${verdict.reason}`
+      if (verdict.allow) {
+        change.model = requestModelId(routing.model)
+        if (from && to && from !== to) turnsSinceSwitch = 0
+      } else cacheNote = ` · ${verdict.reason}`
       if (verdict.allow && verdict.reason && logDecisions) {
         $.ui.log(`[jev-model-router] cache: ${verdict.reason}`)
       }
@@ -560,7 +598,18 @@ export const register: Register = (on, options) => {
         .join(', ')
       $.ui.log(`[jev-model-router] main loop → ${what}: ${routing.reason}${cacheNote}`)
     }
-    return yield* next({ ...e, ...change })
+    const result = yield* next({ ...e, ...change })
+    // The API's own count of what the first request after a switch wrote to and read
+    // from the new model's cache, which settles what the estimate guessed.
+    const usage = result?.usage
+    if (switchedAt !== null && usage) {
+      const at = switchedAt
+      const measured = { written: usage.cache_creation_input_tokens, read: usage.cache_read_input_tokens }
+      void enqueue(async () => {
+        await $.store.set(SWITCH_KEY, recordMeasured(await $.store.get(SWITCH_KEY), at, measured))
+      }).catch(() => undefined)
+    }
+    return result
   })
 
   on('agent.spawn', async ($, e, next) => {

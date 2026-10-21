@@ -49,6 +49,13 @@ export interface CacheSettings {
   outputTokens: number
   /** Whether a move to a more capable model is held to the same test. */
   gateUpgrades: boolean
+  /**
+   * Above this many context tokens, a switch to a model whose cache is cold is
+   * refused while the current model's cache is warm. 0 turns the lock off.
+   */
+  lockAbove: number
+  /** Main-loop turns to stay on a model after switching to it, 0 for no hold. */
+  minStayTurns: number
 }
 
 export const DEFAULT_CACHE_SETTINGS: CacheSettings = {
@@ -57,6 +64,8 @@ export const DEFAULT_CACHE_SETTINGS: CacheSettings = {
   ttlMinutes: 60,
   outputTokens: 1500,
   gateUpgrades: false,
+  lockAbove: 40_000,
+  minStayTurns: 3,
 }
 
 /** When each tier's model last served a request, in `$.clock.now()` ms. */
@@ -69,6 +78,10 @@ export interface SwitchQuestion {
   contextTokens: number | null
   lastUsed: LastUsed
   now: number
+  /** Turns since the last switch was applied, or null when none has been. */
+  turnsSinceSwitch?: number | null
+  /** A turn Jev is unsure about: it is not held to the minimum stay. */
+  urgent?: boolean
 }
 
 export interface SwitchVerdict {
@@ -116,26 +129,40 @@ function horizonCost(tier: Tier, contextTokens: number, warmNow: boolean, settin
 }
 
 /**
- * Whether a model switch should go ahead. A small context, an unknown one, or
- * a move up (made for quality, not for savings) is allowed. Otherwise the
- * switch has to cost less than staying, counting the cache rebuild.
+ * Whether a model switch should go ahead. A small context or an unknown one is
+ * allowed. A switch made within `minStayTurns` of the last one is held, unless
+ * the turn is urgent. Above `lockAbove`, a cold target is refused while the
+ * current cache is warm. Then a move up (made for quality, not for savings) is
+ * allowed; any other has to cost less than staying, counting the cache rebuild.
  */
 export function judgeSwitch(question: SwitchQuestion, settings: CacheSettings): SwitchVerdict {
-  const { from, to, contextTokens, lastUsed, now } = question
+  const { from, to, contextTokens, lastUsed, now, turnsSinceSwitch = null, urgent = false } = question
   if (from === to) return { allow: true, reason: 'same model' }
   if (contextTokens === null) return { allow: true, reason: 'context size unknown' }
   if (contextTokens <= settings.smallContext) {
     return { allow: true, reason: `context small (${Math.round(contextTokens / 1000)}k)` }
   }
 
+  if (!urgent && turnsSinceSwitch !== null && turnsSinceSwitch < settings.minStayTurns) {
+    return {
+      allow: false,
+      reason: `kept ${from}: switched ${turnsSinceSwitch} of ${settings.minStayTurns} turns ago (${Math.round(contextTokens / 1000)}k context)`,
+    }
+  }
+
   const upgrade = TIER_ORDER.indexOf(to) > TIER_ORDER.indexOf(from)
   const fromWarm = isWarm(from, lastUsed, now, settings.ttlMinutes)
   const toWarm = isWarm(to, lastUsed, now, settings.ttlMinutes)
+  const size = `${Math.round(contextTokens / 1000)}k context`
+  if (settings.lockAbove > 0 && contextTokens > settings.lockAbove && fromWarm && !toWarm) {
+    return {
+      allow: false,
+      reason: `kept ${from}: ${to} cache is cold at ${size}, over the ${Math.round(settings.lockAbove / 1000)}k lock`,
+    }
+  }
   const stay = horizonCost(from, contextTokens, fromWarm, settings)
   const switched = horizonCost(to, contextTokens, toWarm, settings)
   const rebuild = turnCost(to, contextTokens, toWarm, settings) - turnCost(from, contextTokens, fromWarm, settings)
-  const size = `${Math.round(contextTokens / 1000)}k context`
-
   if (upgrade && !settings.gateUpgrades) {
     return { allow: true, reason: `move up, not gated (${size}; this turn ${usd(rebuild)} more)`, stay, switched, rebuild }
   }

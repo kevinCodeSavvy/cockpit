@@ -22,7 +22,16 @@ export interface SwitchRecord {
   allowed: boolean
   /** The cache check's sentence; empty when the check was off. */
   reason: string
+  /** Whether the new model's cache was cold by the router's estimate; null before 0.9.7. */
+  cold: boolean | null
+  /** Tokens the API wrote to the prompt cache on the first request after the switch; null until measured. */
+  written: number | null
+  /** Tokens the API served from the prompt cache on that request; null until measured. */
+  read: number | null
 }
+
+const count = (value: unknown): number | null =>
+  typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null
 
 const isTier = (value: unknown): value is Tier =>
   typeof value === 'string' && (TIER_ORDER as readonly string[]).includes(value)
@@ -42,6 +51,9 @@ export function readSwitches(raw: unknown): SwitchRecord[] {
       context: typeof r.context === 'number' ? r.context : null,
       allowed: r.allowed,
       reason: typeof r.reason === 'string' ? r.reason : '',
+      cold: typeof r.cold === 'boolean' ? r.cold : null,
+      written: count(r.written),
+      read: count(r.read),
     })
   }
   return out
@@ -50,6 +62,15 @@ export function readSwitches(raw: unknown): SwitchRecord[] {
 /** The stored list with one more record, oldest dropped past the cap. */
 export function appendSwitch(raw: unknown, record: SwitchRecord, cap: number = SWITCH_CAP): SwitchRecord[] {
   return [...readSwitches(raw), record].slice(-cap)
+}
+
+/** The list with the record made at `at` stamped with what the API reported; no such record, no change. */
+export function recordMeasured(
+  raw: unknown,
+  at: number,
+  usage: { written: number; read: number },
+): SwitchRecord[] {
+  return readSwitches(raw).map((r) => (r.at === at ? { ...r, written: usage.written, read: usage.read } : r))
 }
 
 export interface SwitchSummary {

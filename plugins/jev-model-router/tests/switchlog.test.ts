@@ -4,6 +4,7 @@ import { buildDashboard } from '../hooks/dashboard.ts'
 import {
   appendSwitch,
   formatContext,
+  recordMeasured,
   readSwitches,
   summarizeSwitches,
   SWITCH_CAP,
@@ -18,6 +19,9 @@ const rec = (over: Partial<SwitchRecord> = {}): SwitchRecord => ({
   context: 184_000,
   allowed: false,
   reason: 'kept balanced: switching to fast would cost $0.06 more over 3 turns',
+  cold: null,
+  written: null,
+  read: null,
   ...over,
 })
 
@@ -79,4 +83,28 @@ test('only the newest 15 are listed', () => {
   expect(html).toContain('Newest 15 shown')
   expect(html).toContain('>20k<')
   expect(html).not.toContain('>5k<')
+})
+
+test('records written before measuring existed read back with no cache figures', () => {
+  const [old] = readSwitches([rec()])
+  expect(old?.cold).toBe(null)
+  expect(old?.written).toBe(null)
+  expect(old?.read).toBe(null)
+})
+
+test('the measured cache figures are kept when well formed and dropped when not', () => {
+  const [ok, bad] = readSwitches([
+    rec({ cold: true, written: 90_000, read: 0 }),
+    { ...rec(), cold: 'yes', written: -5, read: 'lots' },
+  ])
+  expect(ok).toEqual(expect.objectContaining({ cold: true, written: 90_000, read: 0 }))
+  expect(bad).toEqual(expect.objectContaining({ cold: null, written: null, read: null }))
+})
+
+test('measuring fills in the record made at that moment and no other', () => {
+  const list = [rec({ at: 1 }), rec({ at: 2 }), rec({ at: 3 })]
+  const out = recordMeasured(list, 2, { written: 84_000, read: 1_200 })
+  expect(out.map((r) => r.written)).toEqual([null, 84_000, null])
+  expect(out[1]?.read).toBe(1_200)
+  expect(recordMeasured(list, 99, { written: 1, read: 1 })).toEqual(list)
 })

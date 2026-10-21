@@ -52,7 +52,7 @@ test('a small or unknown context never blocks a switch', () => {
 test('Sonnet to Haiku at 50k pays even with Haiku cold', () => {
   const verdict = judgeSwitch(
     { from: 'balanced', to: 'fast', contextTokens: 50_000, lastUsed: { balanced: NOW - MIN }, now: NOW },
-    settings(),
+    settings({ lockAbove: 0 }),
   )
   expect(verdict.allow).toBe(true)
   expect(near(verdict.stay ?? 0, 3 * 0.025)).toBe(true)
@@ -65,7 +65,7 @@ test('Sonnet to Haiku at 184k is held back over 3 turns, and allowed over 10', (
   expect(short.allow).toBe(false)
   expect(short.reason).toContain('kept balanced')
   expect(short.reason).toContain('184k context')
-  expect(judgeSwitch(q, settings({ horizonTurns: 10 })).allow).toBe(true)
+  expect(judgeSwitch(q, settings({ horizonTurns: 10, lockAbove: 0 })).allow).toBe(true)
 })
 
 test('a Haiku cache that is already warm makes the same switch pay', () => {
@@ -108,7 +108,7 @@ test('when neither cache is warm, the cheaper write wins', () => {
 
 test('a move up is not gated by default, and says what the rebuild costs', () => {
   const q = { from: 'balanced', to: 'deep', contextTokens: 184_000, lastUsed: { balanced: NOW - MIN }, now: NOW } as const
-  const verdict = judgeSwitch(q, settings())
+  const verdict = judgeSwitch(q, settings({ lockAbove: 0 }))
   expect(verdict.allow).toBe(true)
   expect(verdict.reason).toContain('move up, not gated')
   // Opus writes 184k at 2 x $4/M = $1.472, against a $0.037 Sonnet read, output being $0.03 vs $0.015.
@@ -120,4 +120,62 @@ test('gateUpgrades holds a costly move up back', () => {
   const verdict = judgeSwitch(q, settings({ gateUpgrades: true }))
   expect(verdict.allow).toBe(false)
   expect(verdict.reason).toContain('kept balanced')
+})
+
+test('above the lock a warm model is kept rather than a cold one rebuilt', () => {
+  const q = { from: 'balanced', to: 'fast', contextTokens: 60_000, lastUsed: { balanced: NOW - MIN }, now: NOW } as const
+  const verdict = judgeSwitch(q, settings({ lockAbove: 40_000 }))
+  expect(verdict.allow).toBe(false)
+  expect(verdict.reason).toContain('kept balanced')
+  expect(verdict.reason).toContain('60k context')
+  expect(verdict.reason).toContain('40k')
+})
+
+test('the lock holds a move up too, since the rebuild is the same', () => {
+  const q = { from: 'balanced', to: 'deep', contextTokens: 60_000, lastUsed: { balanced: NOW - MIN }, now: NOW } as const
+  expect(judgeSwitch(q, settings({ lockAbove: 40_000 })).allow).toBe(false)
+})
+
+test('the lock lets a switch through when the target cache is warm', () => {
+  const q = {
+    from: 'balanced',
+    to: 'fast',
+    contextTokens: 60_000,
+    lastUsed: { balanced: NOW - MIN, fast: NOW - 2 * MIN },
+    now: NOW,
+  } as const
+  expect(judgeSwitch(q, settings({ lockAbove: 40_000 })).allow).toBe(true)
+})
+
+test('the lock does not apply when the current cache is cold too', () => {
+  const q = { from: 'balanced', to: 'fast', contextTokens: 60_000, lastUsed: {}, now: NOW } as const
+  expect(judgeSwitch(q, settings({ lockAbove: 40_000 })).allow).toBe(true)
+})
+
+test('under the lock the cost test decides, and lockAbove 0 turns the lock off', () => {
+  const warm = { balanced: NOW - MIN }
+  const mid = { from: 'balanced', to: 'fast', contextTokens: 30_000, lastUsed: warm, now: NOW } as const
+  expect(judgeSwitch(mid, settings({ lockAbove: 40_000 })).allow).toBe(true)
+  const big = { ...mid, contextTokens: 60_000 }
+  expect(judgeSwitch(big, settings({ lockAbove: 0 })).allow).toBe(true)
+})
+
+test('a switch just made is held for minStayTurns, then released', () => {
+  const base = { from: 'balanced', to: 'fast', contextTokens: 30_000, lastUsed: { balanced: NOW - MIN }, now: NOW } as const
+  const s = settings({ lockAbove: 0, minStayTurns: 3 })
+  const held = judgeSwitch({ ...base, turnsSinceSwitch: 1 }, s)
+  expect(held.allow).toBe(false)
+  expect(held.reason).toContain('kept balanced')
+  expect(held.reason).toContain('1 of 3')
+  expect(judgeSwitch({ ...base, turnsSinceSwitch: 2 }, s).allow).toBe(false)
+  expect(judgeSwitch({ ...base, turnsSinceSwitch: 3 }, s).allow).toBe(true)
+})
+
+test('no hold before any switch, with minStayTurns 0, for an unsure turn, or on a small context', () => {
+  const base = { from: 'balanced', to: 'fast', contextTokens: 30_000, lastUsed: { balanced: NOW - MIN }, now: NOW } as const
+  const s = settings({ lockAbove: 0, minStayTurns: 3 })
+  expect(judgeSwitch({ ...base, turnsSinceSwitch: null }, s).allow).toBe(true)
+  expect(judgeSwitch({ ...base, turnsSinceSwitch: 1 }, settings({ lockAbove: 0, minStayTurns: 0 })).allow).toBe(true)
+  expect(judgeSwitch({ ...base, turnsSinceSwitch: 1, urgent: true }, s).allow).toBe(true)
+  expect(judgeSwitch({ ...base, contextTokens: 15_000, turnsSinceSwitch: 1 }, s).allow).toBe(true)
 })
