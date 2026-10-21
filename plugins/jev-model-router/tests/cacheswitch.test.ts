@@ -25,6 +25,13 @@ function world(on: On, stored: Map<string, unknown> = new Map()) {
   const jev = { choice: 'fast' as 'fast' | 'balanced' }
   // What `$.session.usage()` reports: tokens undefined is a session that has not measured yet.
   const sessionUsage: { tokens: number | undefined; fail: boolean; calls: number } = { tokens: undefined, fail: false, calls: 0 }
+  // What `$.session.compact()` does: the mock stands in for the engine's compaction.
+  const compact: { mode: 'ok' | 'throw' | 'skip'; tokensAfter: number | undefined; calls: number; instructions: (string | undefined)[] } = {
+    mode: 'ok',
+    tokensAfter: 20_000,
+    calls: 0,
+    instructions: [],
+  }
   const usage: { next: { cache_creation_input_tokens: number; cache_read_input_tokens: number } | null } = { next: null }
   mock.clock(on, { now: NOW })
   on('store.get', ($, e) => ({ value: stored.get(e.key) }))
@@ -42,6 +49,14 @@ function world(on: On, stored: Map<string, unknown> = new Map()) {
   on('http.fetch', () => ({ value: { status: 200, ok: true, headers: {}, text: answer(jev.choice) } }))
   on('prompt.submit', ($, e) => ({ text: e.text }))
   on('session.measure', () => ({ changed: [] }))
+  on('session.compact', ($, e) => {
+    compact.calls++
+    compact.instructions.push(e.instructions)
+    if (compact.mode === 'throw') throw new Error('compaction unavailable')
+    if (compact.mode === 'skip') return { skip: 'a hook vetoed it' }
+    return { messages: [{ role: 'user', text: 'summary of the conversation', toolUses: [] }], tokensBefore: 184_000, tokensAfter: compact.tokensAfter }
+  })
+  on('turn.complete', ($, e) => ({ text: e.answer }))
   on('session.usage', () => {
     sessionUsage.calls++
     if (sessionUsage.fail) throw new Error('usage unavailable')
@@ -51,7 +66,7 @@ function world(on: On, stored: Map<string, unknown> = new Map()) {
     sent.push(e.model)
     return { turnId: e.turnId, index: e.index, answer: '', toolUses: [], stopReason: 'end_turn', usage: usage.next ? { input_tokens: 10, output_tokens: 20, model: e.model, ...usage.next } : null }
   })
-  return { logs, sent, jev, usage, sessionUsage }
+  return { logs, sent, jev, usage, sessionUsage, compact }
 }
 
 async function turn($: Engine, id: string, model: string, tokens: number) {
@@ -61,6 +76,19 @@ async function turn($: Engine, id: string, model: string, tokens: number) {
   for await (const _chunk of step) {
     // drain
   }
+}
+
+/** The end of a turn, as the engine reports it once the answer is in. */
+async function complete($: Engine, id: string, over: { reason?: 'answer' | 'aborted'; agentId?: string } = {}) {
+  const reason = over.reason ?? 'answer'
+  await $.turn.complete({
+    answer: 'done',
+    durationMs: 1000,
+    isAborted: reason === 'aborted',
+    turnId: id,
+    reason,
+    ...(over.agentId ? { agentId: over.agentId } : {}),
+  })
 }
 
 /** A turn with no `session.measure` before it, as the first turn of a restarted session has. */
@@ -268,6 +296,109 @@ describe('cache-aware main-loop switching', () => {
       await $.session.start(session)
       await turnUnmeasured($, 't1', 'claude-sonnet-5-5')
       expect(w.sent[0]).toContain('haiku')
+    })
+  })
+
+  describe('compact-then-switch', () => {
+    const compactOptions = { ...options, compactBeforeSwitch: true }
+
+    /** Sonnet is warm and the conversation is 184k; Jev then wants Haiku, which the lock refuses. */
+    async function wantCheaperOnBigContext($: Engine, w: ReturnType<typeof world>, id = 't1') {
+      await warmSonnet($, w.jev)
+      await turn($, id, 'claude-sonnet-5-5', 184_000)
+    }
+
+    test('compacts after the turn the lock held, and the next turn switches on the small context', { options: compactOptions }, async ($, on) => {
+      const w = world(on)
+      await $.session.start(session)
+      await wantCheaperOnBigContext($, w)
+      expect(w.sent[1]).toBe('claude-sonnet-5-5')
+      expect(w.compact.calls).toBe(0)
+      await complete($, 't1')
+      expect(w.compact.calls).toBe(1)
+      await turnUnmeasured($, 't2', 'claude-sonnet-5-5')
+      expect(w.sent[2]).toContain('haiku')
+      expect(w.logs.some((line) => line.includes('compact') && line.includes('184k') && line.includes('20k'))).toBe(true)
+    })
+
+    test('does nothing unless the option is on', { options }, async ($, on) => {
+      const w = world(on)
+      await $.session.start(session)
+      await wantCheaperOnBigContext($, w)
+      await complete($, 't1')
+      expect(w.compact.calls).toBe(0)
+    })
+
+    test('a small context switches directly and is never compacted', { options: compactOptions }, async ($, on) => {
+      const w = world(on)
+      await $.session.start(session)
+      await turn($, 't1', 'claude-sonnet-5-5', 12_000)
+      await complete($, 't1')
+      expect(w.sent[0]).toContain('haiku')
+      expect(w.compact.calls).toBe(0)
+    })
+
+    test('a turn that was interrupted, or a subagent turn, is not compacted after', { options: compactOptions }, async ($, on) => {
+      const w = world(on)
+      await $.session.start(session)
+      await wantCheaperOnBigContext($, w)
+      await complete($, 't1', { reason: 'aborted' })
+      await complete($, 't1', { agentId: 'agent-1' })
+      expect(w.compact.calls).toBe(0)
+      await complete($, 't1')
+      expect(w.compact.calls).toBe(1)
+    })
+
+    test('is not repeated while the cooldown runs', { options: compactOptions }, async ($, on) => {
+      const w = world(on)
+      await $.session.start(session)
+      await wantCheaperOnBigContext($, w)
+      await complete($, 't1')
+      await turn($, 't2', 'claude-sonnet-5-5', 184_000)
+      await complete($, 't2')
+      expect(w.compact.calls).toBe(1)
+    })
+
+    test('a compaction that throws is logged and the router carries on', { options: compactOptions }, async ($, on) => {
+      const w = world(on)
+      w.compact.mode = 'throw'
+      await $.session.start(session)
+      await wantCheaperOnBigContext($, w)
+      await complete($, 't1')
+      expect(w.logs.some((line) => line.includes('compact failed'))).toBe(true)
+      await turn($, 't2', 'claude-sonnet-5-5', 184_000)
+      expect(w.sent[2]).toBe('claude-sonnet-5-5')
+    })
+
+    test('a compaction a hook vetoed is logged with its reason', { options: compactOptions }, async ($, on) => {
+      const w = world(on)
+      w.compact.mode = 'skip'
+      await $.session.start(session)
+      await wantCheaperOnBigContext($, w)
+      await complete($, 't1')
+      expect(w.logs.some((line) => line.includes('compact skipped') && line.includes('a hook vetoed it'))).toBe(true)
+    })
+
+    test('with no size after the compaction, the stale one is not read back from the session', { options: compactOptions }, async ($, on) => {
+      const w = world(on)
+      w.compact.tokensAfter = undefined
+      w.sessionUsage.tokens = 184_000
+      await $.session.start(session)
+      await wantCheaperOnBigContext($, w)
+      await complete($, 't1')
+      expect(w.compact.calls).toBe(1)
+      const callsBefore = w.sessionUsage.calls
+      await turnUnmeasured($, 't2', 'claude-sonnet-5-5')
+      expect(w.sessionUsage.calls).toBe(callsBefore)
+      expect(w.sent[2]).toBe('claude-sonnet-5-5')
+    })
+
+    test('tells the summary what to keep', { options: compactOptions }, async ($, on) => {
+      const w = world(on)
+      await $.session.start(session)
+      await wantCheaperOnBigContext($, w)
+      await complete($, 't1')
+      expect(w.compact.instructions[0]).toContain('task')
     })
   })
 })

@@ -2,6 +2,8 @@ import { expect, test } from 'claude-code/testing'
 
 import {
   DEFAULT_CACHE_SETTINGS,
+  COMPACT_COOLDOWN_TURNS,
+  shouldCompactForSwitch,
   isWarm,
   judgeSwitch,
   tierOfModel,
@@ -178,4 +180,23 @@ test('no hold before any switch, with minStayTurns 0, for an unsure turn, or on 
   expect(judgeSwitch({ ...base, turnsSinceSwitch: 1 }, settings({ lockAbove: 0, minStayTurns: 0 })).allow).toBe(true)
   expect(judgeSwitch({ ...base, turnsSinceSwitch: 1, urgent: true }, s).allow).toBe(true)
   expect(judgeSwitch({ ...base, contextTokens: 15_000, turnsSinceSwitch: 1 }, s).allow).toBe(true)
+})
+
+test('compacting for a switch needs a big conversation, a move down, a warm current cache and a cold target', () => {
+  const q = { from: 'balanced', to: 'fast', contextTokens: 184_000, lastUsed: { balanced: NOW - MIN }, now: NOW, turnsSinceCompact: null } as const
+  const s = settings({ lockAbove: 40_000 })
+  expect(shouldCompactForSwitch(q, s)).toBe(true)
+  expect(shouldCompactForSwitch({ ...q, contextTokens: 30_000 }, s)).toBe(false)
+  expect(shouldCompactForSwitch({ ...q, contextTokens: null }, s)).toBe(false)
+  expect(shouldCompactForSwitch({ ...q, from: 'fast', to: 'balanced', lastUsed: { fast: NOW - MIN } }, s)).toBe(false)
+  expect(shouldCompactForSwitch({ ...q, lastUsed: {} }, s)).toBe(false)
+  expect(shouldCompactForSwitch({ ...q, lastUsed: { balanced: NOW - MIN, fast: NOW - MIN } }, s)).toBe(false)
+  expect(shouldCompactForSwitch(q, settings({ lockAbove: 0 }))).toBe(false)
+})
+
+test('compacting waits out its cooldown', () => {
+  const q = { from: 'balanced', to: 'fast', contextTokens: 184_000, lastUsed: { balanced: NOW - MIN }, now: NOW } as const
+  const s = settings({ lockAbove: 40_000 })
+  expect(shouldCompactForSwitch({ ...q, turnsSinceCompact: COMPACT_COOLDOWN_TURNS - 1 }, s)).toBe(false)
+  expect(shouldCompactForSwitch({ ...q, turnsSinceCompact: COMPACT_COOLDOWN_TURNS }, s)).toBe(true)
 })

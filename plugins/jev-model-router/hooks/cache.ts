@@ -183,3 +183,32 @@ export function judgeSwitch(question: SwitchQuestion, settings: CacheSettings): 
     rebuild,
   }
 }
+
+/** Main-loop turns to wait after a compaction (or a failed try) before compacting for a switch again. */
+export const COMPACT_COOLDOWN_TURNS = 20
+
+export interface CompactQuestion {
+  from: Tier
+  to: Tier
+  contextTokens: number | null
+  lastUsed: LastUsed
+  now: number
+  /** Turns since the last compaction was tried, or null when none has been. */
+  turnsSinceCompact: number | null
+}
+
+/**
+ * Whether to compact once this turn ends so the next one can switch cheaply.
+ * Only for a move down that the lock is holding back: the conversation is over
+ * `lockAbove`, the current model's cache is warm and the cheaper one's is cold.
+ * Compacting on the warm model costs a cache read; the switch then re-sends a
+ * summary instead of the whole conversation. A cooldown keeps it from looping
+ * when the context grows back.
+ */
+export function shouldCompactForSwitch(q: CompactQuestion, settings: CacheSettings): boolean {
+  const { from, to, contextTokens, lastUsed, now, turnsSinceCompact } = q
+  if (contextTokens === null || settings.lockAbove <= 0 || contextTokens <= settings.lockAbove) return false
+  if (TIER_ORDER.indexOf(to) >= TIER_ORDER.indexOf(from)) return false
+  if (!isWarm(from, lastUsed, now, settings.ttlMinutes) || isWarm(to, lastUsed, now, settings.ttlMinutes)) return false
+  return turnsSinceCompact === null || turnsSinceCompact >= COMPACT_COOLDOWN_TURNS
+}

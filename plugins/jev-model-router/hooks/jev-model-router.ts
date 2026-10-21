@@ -93,7 +93,7 @@ import {
   shadowRequest,
   wantsShadow,
 } from './shadow.ts'
-import { DEFAULT_CACHE_SETTINGS, isWarm, judgeSwitch, tierOfModel } from './cache.ts'
+import { DEFAULT_CACHE_SETTINGS, isWarm, judgeSwitch, shouldCompactForSwitch, tierOfModel } from './cache.ts'
 import type { LastUsed } from './cache.ts'
 import { buildDashboard } from './dashboard.ts'
 import { appendSwitch, readSwitches, recordMeasured, SWITCH_KEY } from './switchlog.ts'
@@ -140,6 +140,10 @@ async function currentFloor(
     return configuredFloor
   }
 }
+
+/** What the summary of a compaction made for a model switch should keep. */
+const COMPACT_INSTRUCTIONS =
+  'Keep the current task and what is left to do, the decisions made and why, file paths and names, and open questions. Drop finished detail and tool output.'
 
 /**
  * The context size the session reports now, or null when it has no figure yet
@@ -308,6 +312,15 @@ export const register: Register = (on, options) => {
   // Input tokens of the last response, and when each model last served one.
   let contextTokens: number | null = null
   const lastUsed: LastUsed = {}
+  // Compact-then-switch: off unless asked for, since a summary drops detail. Needs the
+  // main model routed and the cache check on, and runs only after a turn has ended.
+  const compactBeforeSwitch = flag('compactBeforeSwitch', false) && routeMainModel && cacheAware
+  let compactPending = false
+  let turnsSinceCompact: number | null = null
+  // After a compaction with no size reported, the session's own figure is the old one.
+  let skipUsageRead = false
+  // The model the main loop last ran on, to tell at prompt time what a switch would be.
+  let lastModel: string | null = null
   // A switch is held once for a context size nobody could give, then left alone.
   let heldForUnknownSize = false
   // Main-loop decisions since a switch was last applied; null before the first.
@@ -467,6 +480,27 @@ export const register: Register = (on, options) => {
 
     pending.put(decision)
 
+    // A move down the lock will hold back, on a big conversation: have the turn run as it is,
+    // then compact when it ends (compact() refuses inside this hook), so the next one can switch.
+    if (compactBeforeSwitch && decision && lastModel) {
+      const wants = route(decision, { model: lastModel }, policy).model
+      const from = tierOfModel(lastModel, policy.tiers)
+      const to = wants ? tierOfModel(wants, policy.tiers) : null
+      if (
+        from &&
+        to &&
+        shouldCompactForSwitch(
+          { from, to, contextTokens, lastUsed, now: await $.clock.now(), turnsSinceCompact },
+          cacheSettings,
+        )
+      ) {
+        compactPending = true
+        if (logDecisions) {
+          $.ui.log(`[jev-model-router] compact: ${to} wanted at ${Math.round((contextTokens ?? 0) / 1000)}k context; will compact after this turn so the switch re-sends a summary`)
+        }
+      }
+    }
+
     // In the background, after the turn is on its way: never awaited, never
     // able to change the decision, and every failure ends in a log line.
     const unsure = isUnsure(decision, policy)
@@ -514,7 +548,10 @@ export const register: Register = (on, options) => {
   // How much conversation a model switch would have to re-send.
   on('session.measure', async ($, e, next) => {
     const tokens = e.context?.tokens
-    if (typeof tokens === 'number') contextTokens = tokens
+    if (typeof tokens === 'number') {
+      contextTokens = tokens
+      skipUsageRead = false
+    }
     return next(e)
   })
 
@@ -531,6 +568,8 @@ export const register: Register = (on, options) => {
 
     const decision = pending.take()
     if (turnsSinceSwitch !== null) turnsSinceSwitch += 1
+    if (turnsSinceCompact !== null) turnsSinceCompact += 1
+    lastModel = e.model
     const routing = route(decision, { model: e.model, effort: e.effort }, policy)
     const change: { model?: string; effort?: Effort } = {}
     // The main loop's `model` is sent to the API as written, so an alias
@@ -544,7 +583,7 @@ export const register: Register = (on, options) => {
       const to = tierOfModel(routing.model, policy.tiers)
       // The size comes from `session.measure`, which has not fired on a session's first turn;
       // the session itself knows it, so ask before treating it as unknown.
-      if (contextTokens === null && cacheAware && from && to && from !== to) {
+      if (contextTokens === null && !skipUsageRead && cacheAware && from && to && from !== to) {
         contextTokens = await sessionContext($)
       }
       const holdForUnknownSize =
@@ -568,7 +607,10 @@ export const register: Register = (on, options) => {
       }
       if (verdict.allow) {
         change.model = requestModelId(routing.model)
-        if (from && to && from !== to) turnsSinceSwitch = 0
+        if (from && to && from !== to) {
+          turnsSinceSwitch = 0
+          compactPending = false
+        }
       } else cacheNote = ` · ${verdict.reason}`
       if (verdict.allow && verdict.reason && logDecisions) {
         $.ui.log(`[jev-model-router] cache: ${verdict.reason}`)
@@ -608,6 +650,31 @@ export const register: Register = (on, options) => {
       void enqueue(async () => {
         await $.store.set(SWITCH_KEY, recordMeasured(await $.store.get(SWITCH_KEY), at, measured))
       }).catch(() => undefined)
+    }
+    return result
+  })
+
+  on('turn.complete', async ($, e, next) => {
+    const result = await next(e)
+    if (!compactPending || e.agentId || e.reason !== 'answer') return result
+    compactPending = false
+    // Whatever happens, wait out the cooldown before trying again.
+    turnsSinceCompact = 0
+    const before = contextTokens
+    try {
+      const compacted = await $.session.compact({ instructions: COMPACT_INSTRUCTIONS })
+      if (compacted.skip !== undefined) {
+        if (logDecisions) $.ui.log(`[jev-model-router] compact skipped: ${compacted.skip}`)
+      } else {
+        contextTokens = compacted.tokensAfter ?? null
+        skipUsageRead = compacted.tokensAfter === undefined
+        if (logDecisions) {
+          const size = (tokens: number | null | undefined) => (typeof tokens === 'number' ? `${Math.round(tokens / 1000)}k` : '?')
+          $.ui.log(`[jev-model-router] compact: ${size(compacted.tokensBefore ?? before)} → ${size(compacted.tokensAfter)}`)
+        }
+      }
+    } catch (error) {
+      if (logDecisions) $.ui.log(`[jev-model-router] compact failed: ${String(error)}`)
     }
     return result
   })
