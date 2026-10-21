@@ -37,7 +37,7 @@ const FOLD_MS = 5000
 const MAX_STRIPS = 4
 const ASK_DELAY_MS = 600
 const TRACK_H = 22
-const VERSION = '0.4.23' // keep in step with .claude-plugin/plugin.json (a test checks)
+const VERSION = '0.4.24' // keep in step with .claude-plugin/plugin.json (a test checks)
 const RIGHT_W = 92
 const TITLE_MAX_CH = 22 // a long prompt as a bar title would squeeze every track
 const TITLE_MAX_PX = 160
@@ -1184,7 +1184,9 @@ function routeSvg(row, W) {
     out += `<text x="${x}" y="15" style="font:400 12px ${F};fill:#c9c7c1">${esc(row.effort)}</text>`
     x += textWidth(row.effort, 6.4) + 14
   }
-  if (row.conf != null) {
+  // every item below is optional: one that would run past the track into the right-hand cell is dropped
+  const room = (need) => x + need <= W
+  if (row.conf != null && room(124)) {
     const c = row.conf >= 0.6 ? STYLE.ok.desk : STYLE.warn.desk
     out += `<text x="${x}" y="15" style="font:400 11.5px ${F};fill:#77756f">conf</text>`
     x += 30
@@ -1193,18 +1195,20 @@ function routeSvg(row, W) {
     out += `<text x="${x}" y="15" style="font:400 11.5px ${F};fill:#9a9893">${row.conf.toFixed(2)}</text>`
     x += 40
   }
-  if (row.unsure) {
-    const label = 'unsure → ' + row.want
-    const w = textWidth(label, 6.4) + 14
+  const label = 'unsure → ' + row.want
+  const unsureW = textWidth(label, 6.4) + 14
+  if (row.unsure && room(unsureW)) {
+    const w = unsureW
     out += `<rect x="${x}" y="3" width="${w}" height="16" rx="8" fill="${STYLE.warn.desk}" fill-opacity=".18" stroke="${STYLE.warn.desk}" stroke-opacity=".7"/>`
     out += `<text x="${x + 7}" y="15" style="font:500 11px ${F};fill:${STYLE.warn.desk}">${esc(label)}</text>`
     x += w + 8
   }
-  if (row.risky != null && row.risky > 0.7) {
+  if (row.risky != null && row.risky > 0.7 && room(56)) {
     out += `<text x="${x}" y="15" style="font:500 11.5px ${F};fill:${STYLE.hot.desk}">⚠ risky</text>`
     x += 56
   }
-  if (row.unapplied) {
+  // an unsure pill or a held/re-sent mark already says why the wanted model did not run
+  if (row.unapplied && !row.unsure && !row.cache && room(72)) {
     out += `<text x="${x}" y="15" style="font:400 11.5px ${F};fill:#77756f">not applied</text>`
     x += 72
   }

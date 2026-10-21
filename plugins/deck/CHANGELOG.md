@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.24
+
+- The Model route row no longer runs over its right-hand cell. When the row was too narrow, the trailing items (`not applied`, the `unsure` pill, `⚠ risky`, the confidence bar) were drawn past the track and printed on top of the `held` / `↻` / `warm` mark. An item that does not fit is now left out, and `not applied` is dropped when the `unsure` pill or the mark already says why.
+
 ## 0.4.23
 
 - The Model route row now says whether a model switch re-sent the conversation: `↑ ↻108k` (the new model's cache was cold and the API wrote 108k tokens to it), `↓ warm` (it read from a warm cache), `= held 184k` (the router kept the current model rather than re-send 184k). The figure is what the API reported for the first request after the switch; until it arrives, the router's own estimate shows with a `~` (`↻~108k`, `~warm`). `/deck status` spells it out.
