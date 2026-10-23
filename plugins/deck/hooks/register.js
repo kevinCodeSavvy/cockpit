@@ -37,7 +37,7 @@ const FOLD_MS = 5000
 const MAX_STRIPS = 4
 const ASK_DELAY_MS = 600
 const TRACK_H = 22
-const VERSION = '0.4.25' // keep in step with .claude-plugin/plugin.json (a test checks)
+const VERSION = '0.4.26' // keep in step with .claude-plugin/plugin.json (a test checks)
 const RIGHT_W = 92
 const TITLE_MAX_CH = 22 // a long prompt as a bar title would squeeze every track
 const TITLE_MAX_PX = 160
@@ -1012,7 +1012,8 @@ function optimizerRow(now) {
   const age = o.at ? now - o.at : 0
   const stale = age > OPT_STALE_MS
   const lowish = 'BCDF'.includes(o.grade)
-  const name = (OPT_WORD[o.grade] ?? 'Grade') + ' (' + o.grade + ') · ' + Math.round(o.score) + '/100' + (o.hit != null ? ' · cache hit ' + Math.round(o.hit * 100) + '%' : '')
+  const word = OPT_WORD[o.grade] ?? 'Grade'
+  const name = word + ' (' + o.grade + ') · ' + Math.round(o.score) + '/100' + (o.hit != null ? ' · cache hit ' + Math.round(o.hit * 100) + '%' : '')
   return {
     id: 'optimizer',
     kind: 'meter',
@@ -1024,9 +1025,10 @@ function optimizerRow(now) {
     count: '',
     // the right column is about 12 characters wide, so a long reason is cut
     right: stale ? 'stale ' + (age < 3600_000 ? Math.round(age / 60_000) + 'm' : Math.round(age / 3600_000) + 'h') : lowish && o.drag ? trunc(o.drag, 12) : '',
-    short: 'opt ' + o.grade + ' ' + Math.round(o.score),
+    short: word + ' (' + o.grade + ') ' + Math.round(o.score),
     section: 'optimizer',
     grade: o.grade,
+    word,
     score: Math.round(o.score),
     hist: [],
     rate: '',
@@ -1639,9 +1641,9 @@ async function deckView($, e, next) {
           columnGap: 1,
           alignItems: 'center',
           children: [
-            desktop ? Svg({ alt: 'optimizer ' + opt.grade, width: 22, height: 22, source: ringSvg(opt.score, st.desk, 'g:' + opt.grade) }) : Text({ color: st.fill, children: [opt.grade] }),
+            desktop ? Svg({ alt: 'session health ' + opt.word + ' ' + opt.grade, width: 22, height: 22, source: ringSvg(opt.score, st.desk, 'g:' + opt.grade) }) : Text({ color: st.fill, children: [opt.grade] }),
             Text({ color: st.fill, bold: true, wrap: 'truncate', children: [String(opt.score)] }),
-            Text({ color: MUTED, wrap: 'truncate', children: ['optimizer'] }),
+            Text({ color: MUTED, wrap: 'truncate', children: [opt.word] }),
           ],
         }),
       )

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.26
+
+- The collapsed chips and rings views of the Session health row show the grade word too: the chip reads `Excellent (S) 93` (was `opt S 93`) and the ring is labelled `Excellent` (was `optimizer`).
+
 ## 0.4.25
 
 - The Session and Weekly bars read `N% used` instead of repeating `5h` or `7d`, which the row title already says.
