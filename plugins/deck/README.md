@@ -72,7 +72,7 @@ When something needs you (a permission prompt, a question, a reply ending in `?`
 
 **Collapsed**, Deck is one line ordered by what matters: anything waiting on you, then your **5h and 7d limits**, context, the current task, and the route. Pick its look:
 
-- `/deck collapsed chips`: chips with mini bars (the default); the Session health row appears as a chip (`Excellent (S) 91`) when there is room
+- `/deck collapsed chips`: chips with mini bars (the default); the Session health row appears as a chip (`Excellent 91`) when there is room
 - `/deck collapsed text`: one plain status line, with the clock and weather at its end
 - `/deck collapsed rings`: a ring per limit with its reset time, plus spend, the token total and the optimizer grade: `◔ 14% 5h · resets 1h7m   ◕ 83% 7d · resets 3h47m   $ $0.10 today · $4.30 mo   T 1.2M tokens   S 91 Excellent`
 

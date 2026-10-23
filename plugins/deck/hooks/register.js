@@ -37,7 +37,7 @@ const FOLD_MS = 5000
 const MAX_STRIPS = 4
 const ASK_DELAY_MS = 600
 const TRACK_H = 22
-const VERSION = '0.4.26' // keep in step with .claude-plugin/plugin.json (a test checks)
+const VERSION = '0.4.27' // keep in step with .claude-plugin/plugin.json (a test checks)
 const RIGHT_W = 92
 const TITLE_MAX_CH = 22 // a long prompt as a bar title would squeeze every track
 const TITLE_MAX_PX = 160
@@ -1025,7 +1025,7 @@ function optimizerRow(now) {
     count: '',
     // the right column is about 12 characters wide, so a long reason is cut
     right: stale ? 'stale ' + (age < 3600_000 ? Math.round(age / 60_000) + 'm' : Math.round(age / 3600_000) + 'h') : lowish && o.drag ? trunc(o.drag, 12) : '',
-    short: word + ' (' + o.grade + ') ' + Math.round(o.score),
+    short: word + ' ' + Math.round(o.score),
     section: 'optimizer',
     grade: o.grade,
     word,

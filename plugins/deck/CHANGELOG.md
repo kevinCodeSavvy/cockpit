@@ -1,8 +1,12 @@
 # Changelog
 
+## 0.4.27
+
+- The Session health chip in the collapsed chips view drops the grade letter to save width: `Excellent 93` (was `Excellent (S) 93`). The wide bar still shows the letter.
+
 ## 0.4.26
 
-- The collapsed chips and rings views of the Session health row show the grade word too: the chip reads `Excellent (S) 93` (was `opt S 93`) and the ring is labelled `Excellent` (was `optimizer`).
+- The collapsed chips and rings views of the Session health row show the grade word too: the chip reads `Excellent 93` (was `opt S 93`) and the ring is labelled `Excellent` (was `optimizer`).
 
 ## 0.4.25
 
