@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.28
 
 - The expanded header leads with the session's folder (home as `~`); `/deck folder off` hides it. Narrow terminals drop the weather and clock before the folder, and the folder is shortened from the left to fit.
 - A header with only the folder on (pet, clock and weather off) stays visible instead of hiding the whole band.
