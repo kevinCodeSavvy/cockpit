@@ -844,7 +844,7 @@ function collectRows(now) {
         title,
         pct: Math.min(100, p),
         marks: [{ f: 0.25 }, { f: 0.5 }, { f: 0.75 }],
-        name: tag + ' · ' + Math.round(p) + '% used' + (hit ? ' · hits ~' + at : ''),
+        name: Math.round(p) + '% used' + (hit ? ' · hits ~' + at : ''),
         count: '',
         // a limit that will be hit before it resets shows when, in place of the reset (the chips keep both)
         right: hit ? '⚠' + at : rl.resetsAt ? '↻ ' + countdown(rl.resetsAt) : '',
@@ -1004,18 +1004,20 @@ function switchesRow(now) {
 
 // S and A are green, B green too but flagged as a watch, C amber, D and F red
 const OPT_STYLE = { S: 'done', A: 'done', B: 'ok', C: 'warn', D: 'hot', F: 'hot' }
+// the grade in plain words, so the letter alone doesn't have to be decoded
+const OPT_WORD = { S: 'Excellent', A: 'Great', B: 'Good', C: 'Fair', D: 'Poor', F: 'Critical' }
 function optimizerRow(now) {
   const o = optimizer
   if (!o) return null
   const age = o.at ? now - o.at : 0
   const stale = age > OPT_STALE_MS
   const lowish = 'BCDF'.includes(o.grade)
-  const name = o.grade + ' ' + Math.round(o.score) + (o.hit != null ? ' · cache hit ' + Math.round(o.hit * 100) + '%' : '')
+  const name = (OPT_WORD[o.grade] ?? 'Grade') + ' (' + o.grade + ') · ' + Math.round(o.score) + '/100' + (o.hit != null ? ' · cache hit ' + Math.round(o.hit * 100) + '%' : '')
   return {
     id: 'optimizer',
     kind: 'meter',
     style: stale ? 'run' : OPT_STYLE[o.grade],
-    title: 'Token optimizer score',
+    title: 'Session health',
     pct: o.score,
     marks: [],
     name,
