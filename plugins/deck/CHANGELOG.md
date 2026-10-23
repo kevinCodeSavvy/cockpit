@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.25
+
+- The Session and Weekly bars read `N% used` instead of repeating `5h` or `7d`, which the row title already says.
+- The Optimizer row is now titled "Session health", and its bar spells the grade in words: `Excellent (S) · 93/100 · cache hit 97%` (S Excellent, A Great, B Good, C Fair, D Poor, F Critical).
+
 ## 0.4.24
 
 - The Model route row no longer runs over its right-hand cell. When the row was too narrow, the trailing items (`not applied`, the `unsure` pill, `⚠ risky`, the confidence bar) were drawn past the track and printed on top of the `held` / `↻` / `warm` mark. An item that does not fit is now left out, and `not applied` is dropped when the `unsure` pill or the mark already says why.

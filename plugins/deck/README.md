@@ -58,7 +58,7 @@ Mods need Claude Code 2.1.286 or later. To try it from a clone without installin
 | **5h and 7d limits** | Percent used, a live countdown to each reset, how fast you're burning it (`+12%/h`), and when you'd hit the limit at that pace (`⚠4:12pm`) | Your plan's rate limits, no `/usage` needed |
 | **Spend** | What this session has cost so far; with `/deck cost on` also today and this month, added up across sessions | Your session's cost ledger. Dollars are API-equivalent on a subscription |
 | **Tokens** | Tokens this session has used, split into in (with cache reads and writes) and out, added up across every response including subagents; `/deck tokens off` hides it | The engine's per-response usage |
-| **Token optimizer score** | The session's quality grade and score (`S 91 · cache hit 91%`); below grade A it also names what is dragging the score down. S and A green, B green, C amber, D and F red. Shown only if the [token-optimizer](https://github.com/alexgreensh/token-optimizer) plugin is installed; `/deck optimizer off` hides it | The file token-optimizer writes for this session (`~/.claude/token-optimizer/quality-cache-<session>.json`). Deck only reads it. No plugin or no file yet: no row |
+| **Session health** | The session's quality grade in words, its score out of 100 and the cache hit rate (`Excellent (S) · 91/100 · cache hit 91%`); below grade A it also names what is dragging the score down. S and A green, B green, C amber, D and F red. Shown only if the [token-optimizer](https://github.com/alexgreensh/token-optimizer) plugin is installed; `/deck optimizer off` hides it | The file token-optimizer writes for this session (`~/.claude/token-optimizer/quality-cache-<session>.json`). Deck only reads it. No plugin or no file yet: no row |
 | **Jev model switches** | How many times the Jev router switched your main chat's model versus kept it in this session (`3 switched · 2 kept`; `0 switched · 0 kept` at the start), with how long ago the newest one was. Shown only if [jev-model-router](#model-routing) is installed; `/deck switches off` hides it | The router's own saved switch log (`~/.claude/plugins/store/jev-model-router_*.json`), counting entries since this session started. Deck only reads it. The log has no session id, so two sessions running at the same time share it. No router: no row |
 | **Cache** | Time left before the prompt cache goes cold and what a cold re-write would cost; red with `⚠ 45s` in the last minute | The last request's time and the context size, priced at the model's cache-write rate |
 | **Model route** | Which model and effort a router picked, and how sure it was | [jev-model-router](#model-routing), if installed |
@@ -72,7 +72,7 @@ When something needs you (a permission prompt, a question, a reply ending in `?`
 
 **Collapsed**, Deck is one line ordered by what matters: anything waiting on you, then your **5h and 7d limits**, context, the current task, and the route. Pick its look:
 
-- `/deck collapsed chips`: chips with mini bars (the default); the Token optimizer score row appears as a chip (`opt S 91`) when there is room
+- `/deck collapsed chips`: chips with mini bars (the default); the Session health row appears as a chip (`opt S 91`) when there is room
 - `/deck collapsed text`: one plain status line, with the clock and weather at its end
 - `/deck collapsed rings`: a ring per limit with its reset time, plus spend, the token total and the optimizer grade: `◔ 14% 5h · resets 1h7m   ◕ 83% 7d · resets 3h47m   $ $0.10 today · $4.30 mo   T 1.2M tokens   S 91 optimizer`
 
