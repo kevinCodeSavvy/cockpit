@@ -62,7 +62,7 @@ Mods need Claude Code 2.1.286 or later. To try it from a clone without installin
 | **Jev model switches** | How many times the Jev router switched your main chat's model versus kept it in this session (`3 switched · 2 kept`; `0 switched · 0 kept` at the start), with how long ago the newest one was. Shown only if [jev-model-router](#model-routing) is installed; `/deck switches off` hides it | The router's own saved switch log (`~/.claude/plugins/store/jev-model-router_*.json`), counting entries since this session started. Deck only reads it. The log has no session id, so two sessions running at the same time share it. No router: no row |
 | **Cache** | Time left before the prompt cache goes cold and what a cold re-write would cost; red with `⚠ 45s` in the last minute | The last request's time and the context size, priced at the model's cache-write rate |
 | **Model route** | Which model and effort a router picked, and how sure it was | [jev-model-router](#model-routing), if installed |
-| **Clock and weather** | Local time and the weather where you are | Open-Meteo, no key |
+| **Folder, clock and weather** | The session's folder (home as `~`), local time and the weather where you are | Open-Meteo, no key |
 
 **Limit forecast.** When your usage is rising and, at that pace, a 5h or 7d limit would run out *before* it resets, the row says when: `hits ~4:12pm` (`hits ~Thu 4pm` on a later day). The bar turns amber, and red when it is under two hours away. The expanded rows show `⚠4:12pm` in place of the reset countdown; the collapsed chips and rings keep the reset and add the hit time. It uses the same recent history as the burn rate (at least five minutes of rising usage), so it shows nothing on a fresh session, when usage is flat, or when the limit resets first. It is an estimate: a burst of heavy work or a quiet hour moves it.
 
@@ -106,7 +106,7 @@ On Desktop it's an animated SVG. In the terminal it's drawn as a picture, so it 
 | `/deck`, `0` in an empty prompt, or the **Deck** footer button | Collapse or expand |
 | `/deck style` | Style picker with live previews (keys 1–6) |
 | `/deck style <name>` | `segments`, `line`, `solid`, `dots`, `pixel`, `spark` |
-| `/deck <section> on\|off` | `plans agents context limits spend tokens optimizer switches cache route pet clock weather all` |
+| `/deck <section> on\|off` | `plans agents context limits spend tokens optimizer switches cache route pet clock weather folder all` |
 | `/deck city <name>` | Weather city |
 | `/deck panel [off]` | Open Deck in a panel of its own, always expanded; it stays on, reopening each session and whenever it goes missing, until `off` |
 | `/deck version` | Show which Deck version is running |

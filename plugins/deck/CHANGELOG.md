@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- The expanded header leads with the session's folder (home as `~`); `/deck folder off` hides it. Narrow terminals drop the weather and clock before the folder, and the folder is shortened from the left to fit.
+- A header with only the folder on (pet, clock and weather off) stays visible instead of hiding the whole band.
+- Background agents still running when a new prompt starts move to the Agents bar instead of disappearing with the old turn's row.
+- Narrow terminal panes keep their rows on one line: the label and bar shrink and the right column truncates.
+
 ## 0.4.27
 
 - The Session health chip in the collapsed chips view drops the grade letter to save width: `Excellent 93` (was `Excellent (S) 93`). The wide bar still shows the letter.

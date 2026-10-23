@@ -1583,7 +1583,7 @@ async function deckView($, e, next) {
   if (wt) extras.push(wt)
   // a narrow terminal drops the weather, then the clock, before the header line would wrap
   if (!desktop) while (extras.length && HEADER_CH + extras.join('  ·  ').length > cols) extras.pop()
-  if (!rows.length && !extras.length && !prefs.show.pet) return next(e)
+  if (!rows.length && !extras.length && !prefs.show.pet && !prefs.show.folder) return next(e)
 
   // the pet's lane
   const lane = []
