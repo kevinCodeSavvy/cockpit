@@ -1855,9 +1855,9 @@ async function deckView($, e, next) {
 
   // terminal
   const maxRows = Math.max(2, (e.props.maxRows ?? 14) - 1 - (lane.length ? PET_ROWS : 0))
-  // glyph, label, bar, right column and ✕ fit in cols: narrow panes shrink the label and bar
+  // glyph, label, bar, right column and ✕ fit in cols: narrow panes shrink the label, bar and right column
   const labelW = Math.min(24, Math.max(cols < 60 ? 6 : 12, Math.floor(cols * 0.2)))
-  const rightW = cols < 50 ? 10 : 12
+  const rightW = cols < 26 ? 4 : cols < 50 ? 10 : 12
   const barW = Math.max(4, cols - labelW - rightW - 8)
   const lines = []
   for (const row of rows.slice(0, (inPane ? rows.length : foldCount(rows.length, nowMs)))) {
