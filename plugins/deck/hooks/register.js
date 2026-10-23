@@ -38,6 +38,7 @@ const MAX_STRIPS = 4
 const ASK_DELAY_MS = 600
 const TRACK_H = 22
 const HEADER_CH = 20 // the terminal header's toggle and row count, with their gaps
+const FOLDER_MIN_CH = 8 // less room than this and the folder is only an ellipsis, so it is left out
 const VERSION = '0.4.28' // keep in step with .claude-plugin/plugin.json (a test checks)
 const RIGHT_W = 92
 const TITLE_MAX_CH = 22 // a long prompt as a bar title would squeeze every track
@@ -1808,7 +1809,7 @@ async function deckView($, e, next) {
     const fits = desktop ? Math.min(48, Math.floor((cols * 8 - 170) / 7.5)) : cols - HEADER_CH
     const room = () => fits - (wide.length ? wide.join('  ·  ').length + 5 : 0) - (desktop ? 2 : 0)
     while (wide.length && room() < 16) wide = wide.slice(0, -1)
-    wide = [(desktop ? '▤ ' : '') + folderText(room()), ...wide]
+    if (room() >= FOLDER_MIN_CH) wide = [(desktop ? '▤ ' : '') + folderText(room()), ...wide]
   }
   const wideText = Box({ flexShrink: 0, children: [Text({ color: MUTED, children: [wide.join('  ·  ')] })] })
   // compact: the pet walks the header line, between the row count and the clock
