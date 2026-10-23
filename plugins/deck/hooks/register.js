@@ -1,7 +1,7 @@
 // deck: a collapsible HUD in the band above the prompt.
 // Bars: todo lists, task tools, approved plans, and subagents as strips.
 // Meters: context and usage limits with reset countdowns. A model-route row shows what a
-// router (jev-model-router) decided. A pet walks above it all. Header: clock and weather.
+// router (jev-model-router) decided. A pet walks above it all. Header: folder, clock and weather.
 //
 // Desktop drawing techniques adapt plan-progress (zycck/claude-mods, MIT, Kirill Serditov).
 
@@ -10,10 +10,10 @@ import { TERMINAL_STYLES, TERMINAL_STYLE_NAMES, terminalBar, terminalMini } from
 import { DESKTOP_STYLES, DESKTOP_STYLE_NAMES, desktopTrack, stripsSvg, stripsHeight } from './styles-desktop.js'
 import { createPet, stepPet, petX, petLaneSvg, petFrame, PET_RASTER } from './pet.js'
 
-const SECTIONS = ['plans', 'agents', 'context', 'limits', 'spend', 'tokens', 'optimizer', 'switches', 'cache', 'route', 'pet', 'clock', 'weather']
+const SECTIONS = ['plans', 'agents', 'context', 'limits', 'spend', 'tokens', 'optimizer', 'switches', 'cache', 'route', 'pet', 'clock', 'weather', 'folder']
 
 const DEFAULT_PREFS = {
-  show: { plans: true, agents: true, context: true, limits: true, spend: true, tokens: true, optimizer: true, switches: true, cache: true, route: true, pet: true, clock: true, weather: false },
+  show: { plans: true, agents: true, context: true, limits: true, spend: true, tokens: true, optimizer: true, switches: true, cache: true, route: true, pet: true, clock: true, weather: false, folder: true },
   always: true, // start every session expanded, whatever the last one left behind
   cacheTtl: '1h', // how long the prompt cache lives: '1h' (subscription) or '5m' (API key)
   style: { terminal: 'solid', desktop: 'pixel' },
@@ -37,6 +37,7 @@ const FOLD_MS = 5000
 const MAX_STRIPS = 4
 const ASK_DELAY_MS = 600
 const TRACK_H = 22
+const HEADER_CH = 20 // the terminal header's toggle and row count, with their gaps
 const VERSION = '0.4.27' // keep in step with .claude-plugin/plugin.json (a test checks)
 const RIGHT_W = 92
 const TITLE_MAX_CH = 22 // a long prompt as a bar title would squeeze every track
@@ -53,6 +54,8 @@ let prefs = clone(DEFAULT_PREFS)
 let frame = 0
 let lastPrompt = ''
 let weather = null
+let cwd = ''
+let home = ''
 let usage = { context: null, rateLimits: [] }
 let sawTerminal = false
 let demoTimer = null
@@ -113,7 +116,9 @@ function actionOf(e) {
 
 function activityRow(now) {
   if (!activity || !prefs.show.plans) return null
-  if (activity.done && now - activity.doneAt > ACTIVITY_LINGER_MS) return null
+  // a background agent outlives the turn that started it: keep its row until it finishes
+  const busyAgents = [...agents.values()].some((a) => a.home === 'activity' && (a.state === 'running' || a.state === 'waiting'))
+  if (activity.done && now - activity.doneAt > ACTIVITY_LINGER_MS && !busyAgents) return null
   // a plain chat turn: worth a row while it thinks, not once it has answered
   if (activity.done && activity.tools === 0 && ![...agents.values()].some((a) => a.home === 'activity')) return null
   const planned = [...bars.values()].some((b) => b.id !== 'agents' && !b.dismissed && b.startedAt >= activity.start - 1000)
@@ -355,6 +360,25 @@ function elapsed(ms) {
   return s < 60 ? s + 's' : Math.floor(s / 60) + 'm ' + (s % 60) + 's'
 }
 
+// the session's folder with the home folder as ~, cut from the left to fit max characters
+function folderText(max) {
+  const path = home && (cwd === home || cwd.startsWith(home + '/')) ? '~' + cwd.slice(home.length) : cwd
+  if (path.length <= max) return path
+  const tail = path.slice(path.length - max + 2)
+  return tail.includes('/') ? '…/' + tail.slice(tail.indexOf('/') + 1) : '…' + path.slice(path.length - max + 1)
+}
+
+// the session's project folder moves with /cd, the Desktop app or a worktree move, not a shell cd
+async function refreshFolder($) {
+  try {
+    const root = await $.session.root()
+    if (root && root !== cwd) {
+      cwd = root
+      $.ui.invalidate('ui.render')
+    }
+  } catch {}
+}
+
 function clockText() {
   const d = new Date()
   return [d.getHours(), d.getMinutes(), d.getSeconds()].map((n) => String(n).padStart(2, '0')).join(':')
@@ -465,6 +489,22 @@ function syncAgentsBar() {
   const rank = (a) => (a.state === 'done' ? 0 : a.state === 'error' ? 1 : 2)
   const list = agentsOf(bar).sort((a, b) => rank(a) - rank(b))
   bar.stages = [{ name: 'Agents', steps: list.map((a) => ({ title: a.title, status: a.state === 'done' ? 'done' : a.state === 'error' ? 'error' : 'active' })) }]
+}
+
+// a new turn replaces the activity row; its background agents still running move to the Agents bar
+// (https://github.com/nvr0x5/claude-deck/issues/3)
+function adoptRunningAgents() {
+  const running = [...agents.values()].filter((a) => a.home === 'activity' && (a.state === 'running' || a.state === 'waiting'))
+  if (!running.length) return
+  if (!bars.has('agents') || barState(bars.get('agents')) === 'done') {
+    for (const a of [...agents.values()]) if (a.home === 'agents') agents.delete(a.id)
+    placeBar(newBar('agents', 'Agents', 'agents', []))
+  }
+  const bar = bars.get('agents')
+  bar.agentsDoneAt = null
+  bar.dismissed = false
+  for (const a of running) a.home = 'agents'
+  syncAgentsBar()
 }
 
 // moves the demo bar one step
@@ -1533,12 +1573,16 @@ async function deckView($, e, next) {
   const desktop = e.surface !== 'terminal' // desktop, VS Code and mobile all draw Svg
   if (e.surface === 'terminal') sawTerminal = true
   const nowMs = Date.now()
-  const cols = Math.max(40, e.props.bodyColumns ?? e.viewport?.columns ?? 100)
+  // the real width, even a narrow side-by-side pane: a floor wider than the band wraps every row
+  // (https://github.com/nvr0x5/claude-deck/issues/4)
+  const cols = Math.max(desktop ? 40 : 20, e.props.bodyColumns ?? e.viewport?.columns ?? 100)
   const rows = collectRows(nowMs)
   const extras = []
   if (prefs.show.clock) extras.push((desktop ? '◷ ' : '') + clockText())
   const wt = prefs.show.weather ? weatherText(desktop) : ''
   if (wt) extras.push(wt)
+  // a narrow terminal drops the weather, then the clock, before the header line would wrap
+  if (!desktop) while (extras.length && HEADER_CH + extras.join('  ·  ').length > cols) extras.pop()
   if (!rows.length && !extras.length && !prefs.show.pet) return next(e)
 
   // the pet's lane
@@ -1757,8 +1801,18 @@ async function deckView($, e, next) {
         $.ui.invalidate('ui.render')
       },
     })
+  // expanded only: the folder leads the header; a narrow header drops the weather and clock before it
+  let wide = extras
+  if (prefs.show.folder && cwd) {
+    // Desktop measures in pixels, about 8 per column and 7.5 per header character, like petW below
+    const fits = desktop ? Math.min(48, Math.floor((cols * 8 - 170) / 7.5)) : cols - HEADER_CH
+    const room = () => fits - (wide.length ? wide.join('  ·  ').length + 5 : 0) - (desktop ? 2 : 0)
+    while (wide.length && room() < 16) wide = wide.slice(0, -1)
+    wide = [(desktop ? '▤ ' : '') + folderText(room()), ...wide]
+  }
+  const wideText = Box({ flexShrink: 0, children: [Text({ color: MUTED, children: [wide.join('  ·  ')] })] })
   // compact: the pet walks the header line, between the row count and the clock
-  const petW = Math.max(80, Math.round(Math.max(320, cols * 8) - 170 - extras.join('  ·  ').length * 7.5))
+  const petW = Math.max(80, Math.round(Math.max(320, cols * 8) - 170 - wide.join('  ·  ').length * 7.5))
   const headerMid = inlinePet
     ? Box({ flexGrow: 1, overflow: 'hidden', children: [Svg({ source: petLaneSvg(pet, nowMs, petW, 28, 0.7), alt: 'Claude pet, ' + pet.act, width: petW, height: 28 })] })
     : spacer
@@ -1766,7 +1820,7 @@ async function deckView($, e, next) {
     flexDirection: 'row',
     columnGap: 1,
     alignItems: 'center',
-    children: [toggle, Text({ color: DIM, children: ['· ' + rows.length + (rows.length === 1 ? ' row' : ' rows')] }), headerMid, extrasText],
+    children: [toggle, Text({ color: DIM, children: ['· ' + rows.length + (rows.length === 1 ? ' row' : ' rows')] }), headerMid, wideText],
   })
 
   if (desktop) {
@@ -1801,9 +1855,10 @@ async function deckView($, e, next) {
 
   // terminal
   const maxRows = Math.max(2, (e.props.maxRows ?? 14) - 1 - (lane.length ? PET_ROWS : 0))
-  const labelW = Math.min(24, Math.max(12, Math.floor(cols * 0.2)))
-  const rightW = 12
-  const barW = Math.max(16, cols - labelW - rightW - 8)
+  // glyph, label, bar, right column and ✕ fit in cols: narrow panes shrink the label and bar
+  const labelW = Math.min(24, Math.max(cols < 60 ? 6 : 12, Math.floor(cols * 0.2)))
+  const rightW = cols < 50 ? 10 : 12
+  const barW = Math.max(4, cols - labelW - rightW - 8)
   const lines = []
   for (const row of rows.slice(0, (inPane ? rows.length : foldCount(rows.length, nowMs)))) {
     if (lines.length >= maxRows) break
@@ -1814,11 +1869,13 @@ async function deckView($, e, next) {
         Box({
           flexDirection: 'row',
           columnGap: 1,
+          height: 1,
+          overflow: 'hidden',
           children: [
             Text({ color: STYLE.run.fill, children: ['⇄'] }),
             Box({ width: labelW, flexShrink: 0, children: [Text({ color: TEXT, children: [row.title] })] }),
             Box({ flexGrow: 1, flexDirection: 'row', children: runs(Text, cells.slice(0, barW)) }),
-            Box({ width: rightW, flexShrink: 0, justifyContent: 'flex-end', children: [Text({ color: dirColor, children: [row.right] })] }),
+            Box({ width: rightW, flexShrink: 0, justifyContent: 'flex-end', children: [Text({ color: dirColor, wrap: 'truncate', children: [row.right] })] }),
             close(row),
           ],
         }),
@@ -1829,11 +1886,13 @@ async function deckView($, e, next) {
       Box({
         flexDirection: 'row',
         columnGap: 1,
+        height: 1,
+        overflow: 'hidden',
         children: [
           Text({ color: st.fill, children: [st.glyph] }),
           Box({ width: labelW, flexShrink: 0, children: [Text({ color: TEXT, wrap: 'truncate', children: [trunc(row.title, labelW)] })] }),
-          Box({ flexGrow: 1, flexDirection: 'row', children: runs(Text, terminalBar(prefs.style.terminal, row, barW, frame)) }),
-          Box({ width: rightW, flexShrink: 0, justifyContent: 'flex-end', children: [Text({ color: MUTED, children: [row.right] })] }),
+          Box({ flexGrow: 1, flexDirection: 'row', overflow: 'hidden', children: runs(Text, terminalBar(prefs.style.terminal, row, barW, frame)) }),
+          Box({ width: rightW, flexShrink: 0, justifyContent: 'flex-end', children: [Text({ color: MUTED, wrap: 'truncate', children: [row.right] })] }),
           close(row),
         ],
       }),
@@ -1845,6 +1904,8 @@ async function deckView($, e, next) {
         Box({
           flexDirection: 'row',
           columnGap: 1,
+          height: 1,
+          overflow: 'hidden',
           children: [
             Text({ children: [ag.depth ? '    ' : '  '] }),
             Text({ color: ast.fill, children: [ag.state === 'running' && frame % 6 < 3 ? '○' : '●'] }),
@@ -1864,6 +1925,10 @@ async function deckView($, e, next) {
 
 export function register(on) {
   on('session.start', async ($, e, next) => {
+    cwd = e.cwd ?? ''
+    try {
+      home = ((await $.env.get('HOME')) ?? '').replace(/\/$/, '')
+    } catch {}
     const saved = await $.store.get('prefs')
     if (saved && typeof saved === 'object') {
       prefs = {
@@ -2095,6 +2160,7 @@ export function register(on) {
 
   on('turn.start', async ($, e, next) => {
     if (!String(e.text ?? '').startsWith('/')) {
+      adoptRunningAgents()
       for (const a of [...agents.values()]) if (a.home === 'activity') agents.delete(a.id)
       activity = { title: lastPrompt || 'Working', start: Date.now(), tools: 0, action: 'Thinking', done: false, doneAt: 0, agentsDoneAt: null }
     }
@@ -2222,6 +2288,12 @@ export function register(on) {
     return next(e)
   })
 
+  on('classic.CwdChanged', async ($, e, next) => {
+    const result = await next(e)
+    await refreshFolder($)
+    return result
+  })
+
   on('classic.SubagentStop', async ($, e, next) => {
     if (agents.has(e.agent_id)) {
       finishAgent(e.agent_id, 'done', 'Done')
@@ -2303,6 +2375,8 @@ export function register(on) {
       applyTaskResult(e, ran.result)
       $.ui.invalidate('ui.render')
     }
+    // a worktree move or /cd may have moved the project folder, with or without CwdChanged
+    if (!e.agentId) await refreshFolder($)
     if (e.tool === 'ExitPlanMode' && ok) {
       const text = typeof e.plan === 'string' ? e.plan : ran.result?.plan
       const parsed = typeof text === 'string' ? parsePlan(text) : null
